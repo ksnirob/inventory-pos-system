@@ -4,6 +4,7 @@ import { PrintButton } from "@/components/orders/print-button";
 import { PageHeader } from "@/components/page-header";
 import { OrderStatusBadge } from "@/components/ui/order-status-badge";
 import { LinkButton } from "@/components/ui/button";
+import { appConfig } from "@/lib/app-config";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatDate, formatQuantity } from "@/lib/utils";
 
@@ -44,8 +45,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         </div>
         <div className="pos-slip w-[320px] rounded-sm border border-stone-300 bg-white px-4 py-5 font-mono text-[12px] leading-tight text-stone-950 shadow-sm print:mx-auto print:w-[80mm] print:border-0 print:p-0 print:shadow-none">
           <div className="text-center">
-            <p className="text-[18px] font-black uppercase tracking-wide">OrderDesk POS</p>
-            <p className="mt-1 text-[11px] uppercase">Inventory Management System</p>
+            <p className="text-[18px] font-black uppercase tracking-wide">{appConfig.systemName} POS</p>
+            <p className="mt-1 text-[11px] uppercase">{appConfig.systemTagline}</p>
             <p className="text-[11px]">Sales Payslip</p>
           </div>
 
@@ -115,7 +116,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <div className="mt-4 border-t border-dashed border-stone-400 pt-3 text-center text-[11px]">
             <p className="font-bold uppercase">Thank you for shopping</p>
             <p>Goods sold are not returnable</p>
-            <p className="mt-2">Powered by OrderDesk POS</p>
+            <p className="mt-2">Powered by {appConfig.systemName} POS</p>
           </div>
         </div>
       </section>

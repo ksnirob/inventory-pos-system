@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/app-shell";
+import { appConfig } from "@/lib/app-config";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OrderDesk | POS & Inventory",
+  title: `${appConfig.systemName} | POS & Inventory`,
   description: "Modern point of sale, inventory, expense, and reporting workspace"
 };
 

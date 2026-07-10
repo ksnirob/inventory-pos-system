@@ -18,6 +18,7 @@ import {
   X
 } from "lucide-react";
 import { useState } from "react";
+import { appConfig } from "@/lib/app-config";
 import { cn } from "@/lib/utils";
 import { QuickActions } from "@/components/quick-actions";
 
@@ -67,8 +68,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <ShoppingCart size={19} strokeWidth={2.4} />
           </span>
           <span className="min-w-0">
-            <span className="block text-base font-bold tracking-tight">OrderDesk</span>
-            <span className="block text-[11px] font-medium text-slate-400">Retail operations</span>
+            <span className="block text-base font-bold tracking-tight">{appConfig.systemName}</span>
+            <span className="block text-[11px] font-medium text-slate-400">{appConfig.systemTagline}</span>
           </span>
         </Link>
         <button className="rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-950 lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu">
@@ -123,18 +124,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
             <div className="min-w-0">
               <p className="truncate text-base font-bold text-slate-950">{pageTitle}</p>
-              <p className="hidden text-xs text-slate-500 sm:block">OrderDesk / {pageTitle}</p>
+              <p className="hidden text-xs text-slate-500 sm:block">{appConfig.systemName} / {pageTitle}</p>
             </div>
           </div>
           <QuickActions />
         </header>
         <main className="mx-auto max-w-[1540px] p-4 sm:p-6 lg:p-8">{children}</main>
         <footer className="border-t border-slate-200 bg-white px-4 py-5 text-center text-xs text-slate-400 sm:px-6 lg:px-8">
-          Developed by <span className="font-semibold text-slate-600">Khaled Saifullah</span>
-          <span className="mx-2 text-slate-300">·</span>
-          <a href="https://ksnirob.com" target="_blank" rel="noreferrer" className="font-semibold text-emerald-700 hover:text-emerald-900">ksnirob.com</a>
+          Developed by <a href="https://ksnirob.com" target="_blank" rel="noreferrer" className="font-semibold text-slate-600 hover:text-emerald-800">Khaled Saifullah</a>
         </footer>
       </div>
     </div>
   );
 }
+

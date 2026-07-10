@@ -3,6 +3,14 @@ import { orderStatuses, paymentMethods, stockTransactionTypes } from "@/types/in
 
 const requiredText = z.string().trim().min(1, "This field is required");
 const optionalText = z.string().trim().optional().or(z.literal(""));
+const productImageUrl = z
+  .string()
+  .trim()
+  .refine(
+    (value) => value === "" || value.startsWith("/uploads/") || z.string().url().safeParse(value).success,
+    "Enter a valid image URL"
+  )
+  .optional();
 
 export const categorySchema = z.object({
   name: requiredText.max(80, "Name must be 80 characters or fewer"),
@@ -28,7 +36,7 @@ export const productSchema = z.object({
   name: requiredText.max(120, "Name must be 120 characters or fewer"),
   sku: requiredText.max(60, "SKU must be 60 characters or fewer"),
   description: optionalText,
-  imageUrl: z.string().trim().url("Enter a valid image URL").optional().or(z.literal("")),
+  imageUrl: productImageUrl,
   categoryId: requiredText,
   supplierId: requiredText,
   purchasePrice: z.coerce.number().min(0, "Purchase price cannot be negative"),

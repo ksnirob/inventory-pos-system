@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Minus, Plus, Search, ShoppingBag, Trash2 } from "lucide-react";
+import { ChevronDown, MapPin, Minus, Plus, Search, ShoppingBag, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -8,6 +8,7 @@ import { createOrder } from "@/actions/inventory";
 import { Toast } from "@/components/toast";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
+import { appConfig } from "@/lib/app-config";
 import { formatCurrency } from "@/lib/utils";
 import type { OrderInput } from "@/schemas/inventory";
 import { paymentMethodLabels, paymentMethods } from "@/types/inventory";
@@ -125,7 +126,13 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
 
   function updateDeliveryArea(nextArea: "NONE" | "DHAKA" | "OUTSIDE_DHAKA") {
     setDeliveryArea(nextArea);
-    setDeliveryCharge(nextArea === "DHAKA" ? 60 : nextArea === "OUTSIDE_DHAKA" ? 120 : 0);
+    setDeliveryCharge(
+      nextArea === "DHAKA"
+        ? appConfig.deliveryCharges.dhaka
+        : nextArea === "OUTSIDE_DHAKA"
+          ? appConfig.deliveryCharges.outsideDhaka
+          : 0
+    );
   }
 
   function addProduct(productId: string) {
@@ -244,16 +251,20 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
               className="h-12 w-full rounded-md border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
             />
           </label>
-          <select
-            value={category}
-            onChange={(event) => setCategory(event.target.value)}
-            className="h-12 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-          >
-            <option value="">All categories</option>
-            {categories.map((item) => (
-              <option key={item} value={item}>{item}</option>
-            ))}
-          </select>
+          <label className="relative w-full lg:w-auto">
+            <span className="sr-only">Filter by category</span>
+            <select
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              className="h-12 w-full appearance-none rounded-md border border-slate-200 bg-white pl-3 pr-12 text-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 lg:w-44"
+            >
+              <option value="">All categories</option>
+              {categories.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-900" size={18} />
+          </label>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
           {filteredProducts.map((product) => (
@@ -261,31 +272,33 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
               key={product.id}
               type="button"
               onClick={() => addProduct(product.id)}
-              className="group relative overflow-hidden rounded-md border border-slate-200 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"
+              className="group relative flex min-h-64 flex-col overflow-hidden rounded-md border border-slate-200 bg-white text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"
             >
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div className="flex gap-3">
-                  {product.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={product.imageUrl} alt={product.name} className="h-12 w-12 rounded-md object-cover" />
-                  ) : (
-                    <span className="grid h-12 w-12 place-items-center rounded-md bg-emerald-50 text-xs font-black text-emerald-700">
-                      {product.name.slice(0, 2).toUpperCase()}
-                    </span>
-                  )}
-                  <div>
-                    <p className="font-semibold text-slate-950">{product.name}</p>
-                    <p className="mt-1 text-xs text-slate-500">{product.sku}</p>
-                  </div>
+              {product.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={product.imageUrl} alt={product.name} className="h-32 w-full border-b border-slate-100 bg-slate-50 object-cover" />
+              ) : (
+                <span className="grid h-32 w-full place-items-center border-b border-emerald-100 bg-emerald-50 text-2xl font-black text-emerald-700">
+                  {product.name.slice(0, 2).toUpperCase()}
+                </span>
+              )}
+              <div className="flex items-start justify-between gap-3 p-3 pb-2">
+                <div className="min-w-0">
+                  <p className="line-clamp-2 font-semibold leading-5 text-slate-950">{product.name}</p>
+                  <p className="mt-0.5 truncate text-xs text-slate-500">{product.sku}</p>
                 </div>
-                <span className="rounded-full bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-600 ring-1 ring-slate-200">{product.quantity} {product.unit}</span>
+                <span className="max-w-20 shrink-0 rounded-full bg-slate-50 px-2 py-1 text-center text-[10px] font-bold leading-tight text-slate-600 ring-1 ring-slate-200">
+                  {product.quantity} {product.unit}
+                </span>
               </div>
-              <div className="flex items-end justify-between gap-3">
-                <div>
+              <div className="mx-3 mb-3 mt-auto flex items-end justify-between gap-3 border-t border-slate-100 pt-2.5">
+                <div className="min-w-0">
                   <p className="text-lg font-bold text-slate-950">{formatCurrency(product.sellingPrice)}</p>
-                  <p className="mt-1 text-xs text-slate-500">{product.categoryName}</p>
+                  <p className="mt-1 truncate text-xs text-slate-500">{product.categoryName}</p>
                 </div>
-                <span className="grid h-8 w-8 place-items-center rounded-md bg-slate-900 text-lg font-medium text-white transition group-hover:bg-emerald-700">+</span>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-900 text-lg font-medium text-white transition group-hover:bg-emerald-700">+</span>
+                </div>
               </div>
               <span className="absolute inset-x-0 bottom-0 h-0.5 bg-emerald-500 opacity-0 transition group-hover:opacity-100" />
             </button>
@@ -295,12 +308,12 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
       </section>
 
       <aside className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-md shadow-slate-900/[0.05] xl:sticky xl:top-24 xl:self-start">
-        <div className="flex items-center justify-between bg-[#171a1f] px-5 py-4 text-white">
+        <div className="flex items-center justify-between bg-emerald-700 px-5 py-4 text-white">
           <div>
             <h2 className="font-semibold">Current sale</h2>
             <p className="text-xs text-white/50">{cartDetails.lines.length} items selected</p>
           </div>
-          <span className="grid h-9 w-9 place-items-center rounded-md bg-white/10"><ShoppingBag className="text-[#ff8a6f]" size={19} /></span>
+          <span className="grid h-9 w-9 place-items-center rounded-md bg-white/15"><ShoppingBag className="text-white" size={19} /></span>
         </div>
         <div className="max-h-[360px] overflow-y-auto p-4">
           {cartDetails.lines.map((line) => (
@@ -336,15 +349,18 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   {isKgProduct(line.product) ? (
-                    <select
-                      value={line.enteredUnit}
-                      onChange={(event) => setManualUnit(line.productId, event.target.value)}
-                      className="h-9 rounded-md border border-stone-200 bg-white px-2 text-sm"
-                      aria-label="Sale unit"
-                    >
-                      <option value="kg">kg</option>
-                      <option value="gm">gm</option>
-                    </select>
+                    <label className="relative">
+                      <select
+                        value={line.enteredUnit}
+                        onChange={(event) => setManualUnit(line.productId, event.target.value)}
+                        className="h-9 appearance-none rounded-md border border-stone-200 bg-white pl-2.5 pr-8 text-sm"
+                        aria-label="Sale unit"
+                      >
+                        <option value="kg">kg</option>
+                        <option value="gm">gm</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-700" size={14} />
+                    </label>
                   ) : (
                     <span className="rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">{line.product?.unit}</span>
                   )}

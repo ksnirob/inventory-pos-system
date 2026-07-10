@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -113,22 +114,25 @@ export function StockForm({ products }: { products: ProductOption[] }) {
               aria-label="Quantity"
               {...register("quantity")}
             />
-            <select
-              aria-label="Quantity unit"
-              className="h-11 border-l border-stone-200 bg-stone-50 px-3 text-sm font-semibold text-stone-700 outline-none"
-              value={activeQuantityUnit}
-              onChange={(event) => setQuantityUnit(event.target.value)}
-              disabled={!selectedProduct}
-            >
-              {supportsGramEntry ? (
-                <>
-                  <option value="gm">gm</option>
-                  <option value="kg">kg</option>
-                </>
-              ) : (
-                <option value={selectedUnit}>{selectedUnit || "unit"}</option>
-              )}
-            </select>
+            <label className="relative">
+              <select
+                aria-label="Quantity unit"
+                className="h-11 w-full appearance-none border-l border-stone-200 bg-stone-50 pl-3 pr-9 text-sm font-semibold text-stone-700 outline-none"
+                value={activeQuantityUnit}
+                onChange={(event) => setQuantityUnit(event.target.value)}
+                disabled={!selectedProduct}
+              >
+                {supportsGramEntry ? (
+                  <>
+                    <option value="gm">gm</option>
+                    <option value="kg">kg</option>
+                  </>
+                ) : (
+                  <option value={selectedUnit}>{selectedUnit || "unit"}</option>
+                )}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-700" size={15} />
+            </label>
           </div>
           {errors.quantity?.message ? <span className="text-xs font-medium text-red-600">{errors.quantity.message}</span> : null}
           {selectedProduct ? (

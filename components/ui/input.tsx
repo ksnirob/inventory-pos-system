@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type FieldProps = { label: string; error?: string };
@@ -32,7 +33,10 @@ export function Select({ label, error, className, children, ...props }: SelectPr
   return (
     <label className={labelClass}>
       {label}
-      <select className={cn("h-11", fieldClass, className)} {...props}>{children}</select>
+      <span className="relative">
+        <select className={cn("h-11 w-full appearance-none", fieldClass, "pl-3 pr-12", className)} {...props}>{children}</select>
+        <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-900" size={18} />
+      </span>
       {error ? <span className="text-xs font-medium text-rose-600">{error}</span> : null}
     </label>
   );

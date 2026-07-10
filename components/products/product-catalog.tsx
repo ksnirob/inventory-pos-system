@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDownUp, Eye, Pencil, Plus, RefreshCw, Search } from "lucide-react";
+import { ArrowDownUp, ChevronDown, Eye, Pencil, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { deleteProduct } from "@/actions/inventory";
 import { DeleteButton } from "@/components/delete-button";
@@ -60,28 +60,29 @@ export function ProductCatalog({ products, categories }: { products: ProductItem
     setPage(1);
   }
 
-  function reset() {
-    setQuery(""); setCategory(""); setStatus(""); setSort("name"); setDirection("asc"); setPage(1);
-  }
-
   return (
     <>
       <div className="mb-5 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-        <div className="flex gap-2">
+        <div className="grid gap-2 lg:grid-cols-[minmax(260px,1fr)_220px_220px]">
           <label className="relative flex-1">
             <span className="sr-only">Search products</span>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600" size={17} />
             <input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} autoComplete="off" placeholder="Search product name or SKU" className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100" />
           </label>
-          <button type="button" onClick={reset} className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw size={16} /><span className="hidden sm:inline">Reset</span></button>
-        </div>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:max-w-3xl">
-          <select value={category} onChange={(event) => { setCategory(event.target.value); setPage(1); }} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
-            <option value="">All categories</option>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-          </select>
-          <select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
-            <option value="">All stock statuses</option><option value="IN_STOCK">In Stock</option><option value="LOW_STOCK">Low Stock</option><option value="OUT_OF_STOCK">Out of Stock</option>
-          </select>
+          <label className="relative">
+            <span className="sr-only">Filter by category</span>
+            <select value={category} onChange={(event) => { setCategory(event.target.value); setPage(1); }} className="h-11 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-12 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
+              <option value="">All categories</option>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-900" size={17} />
+          </label>
+          <label className="relative">
+            <span className="sr-only">Filter by stock status</span>
+            <select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} className="h-11 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-12 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
+              <option value="">All stock statuses</option><option value="IN_STOCK">In Stock</option><option value="LOW_STOCK">Low Stock</option><option value="OUT_OF_STOCK">Out of Stock</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-900" size={17} />
+          </label>
         </div>
       </div>
 
