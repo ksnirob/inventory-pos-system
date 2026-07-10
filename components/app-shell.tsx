@@ -7,6 +7,7 @@ import {
   Boxes,
   ClipboardCheck,
   ClipboardList,
+  ReceiptText,
   FolderTree,
   Home,
   Menu,
@@ -28,6 +29,7 @@ const navigation = [
   { href: "/categories", label: "Categories", icon: FolderTree },
   { href: "/suppliers", label: "Suppliers", icon: Truck },
   { href: "/stock", label: "Stock Management", icon: Boxes },
+  { href: "/expenses", label: "Expenses", icon: ReceiptText },
   { href: "/reports", label: "Reports", icon: BarChart3 }
 ];
 
@@ -43,10 +45,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const sidebar = (
-    <aside className="flex h-full w-72 flex-col border-r border-stone-200 bg-white text-stone-950 shadow-xl shadow-stone-300/20">
-      <div className="flex h-20 items-center justify-between border-b border-stone-200 px-5">
+    <aside className="flex h-full w-72 flex-col border-r border-cyan-100 bg-white text-stone-950 shadow-xl shadow-cyan-100/60">
+      <div className="flex h-20 items-center justify-between border-b border-cyan-100 px-5">
         <Link href="/" className="flex items-center gap-3 font-semibold">
-          <span className="grid h-10 w-10 place-items-center rounded-md bg-stone-900 text-white shadow-sm">
+          <span className="grid h-10 w-10 place-items-center rounded-md bg-gradient-to-br from-cyan-700 to-amber-400 text-white shadow-sm">
             <ClipboardCheck size={19} />
           </span>
           <span>
@@ -58,7 +60,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <X size={20} />
         </button>
       </div>
-      <div className="mx-4 mt-4 flex items-center gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-500">
+      <div className="mx-4 mt-4 flex items-center gap-2 rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-sm text-cyan-800">
         <Search size={16} />
         Manage customer orders
       </div>
@@ -74,8 +76,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition",
                 active
-                  ? "bg-stone-900 text-white shadow-sm"
-                  : "text-stone-600 hover:bg-stone-100 hover:text-stone-950"
+                  ? "bg-gradient-to-r from-cyan-700 to-cyan-600 text-white shadow-sm shadow-cyan-100"
+                  : "text-stone-600 hover:bg-cyan-50 hover:text-cyan-900"
               )}
             >
               <Icon size={18} />
@@ -84,12 +86,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           );
         })}
       </nav>
-      <div className="mx-4 mt-auto mb-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+      <div className="mx-4 mt-auto mb-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
         <div className="mb-2 flex items-center gap-2 font-semibold">
           <ClipboardList size={16} />
           Order-first workflow
         </div>
         <p className="text-xs leading-5 text-amber-900/80">New orders automatically reserve stock and write movement history.</p>
+      </div>
+      <div className="mx-4 mb-4 rounded-md border border-cyan-100 bg-cyan-50 px-4 py-3 text-xs font-medium text-cyan-900">
+        Developed by <span className="font-bold">Khaled Saifullah</span>
+        <br />
+        <a href="https://ksnirob.com" target="_blank" rel="noreferrer" className="font-bold text-cyan-700 hover:text-cyan-900">ksnirob.com</a>
       </div>
     </aside>
   );
@@ -104,7 +111,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       ) : null}
       <div className="lg:pl-72">
-        <header className="sticky top-0 z-20 flex h-20 items-center justify-between border-b border-stone-200 bg-white/85 px-4 shadow-sm shadow-stone-200/70 backdrop-blur-xl sm:px-6">
+        <header className="sticky top-0 z-20 flex h-20 items-center justify-between gap-3 border-b border-cyan-100 bg-white/85 px-4 shadow-sm shadow-cyan-100/70 backdrop-blur-xl sm:px-6">
           <div className="flex items-center gap-4">
             <button className="rounded-md border border-stone-200 bg-white p-2 shadow-sm lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
               <Menu size={22} />

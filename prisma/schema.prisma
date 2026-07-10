@@ -37,6 +37,7 @@ model Product {
   name              String
   sku               String             @unique
   description       String?
+  imageUrl          String?
   purchasePrice     Decimal
   sellingPrice      Decimal
   quantity          Decimal            @default(0)
@@ -55,6 +56,21 @@ model Product {
   @@index([categoryId])
   @@index([supplierId])
   @@index([quantity])
+}
+
+model Expense {
+  id            String   @id @default(cuid())
+  title         String
+  category      String
+  amount        Decimal
+  paymentMethod String   @default("CASH")
+  expenseDate   DateTime @default(now())
+  note          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category])
+  @@index([expenseDate])
 }
 
 model Customer {
@@ -80,6 +96,9 @@ model Order {
   subtotal    Decimal
   tax         Decimal     @default(0)
   discount    Decimal     @default(0)
+  deliveryArea String     @default("NONE")
+  deliveryCharge Decimal  @default(0)
+  costingAmount Decimal   @default(0)
   total       Decimal
   paymentMethod String    @default("CASH")
   paidAmount    Decimal   @default(0)

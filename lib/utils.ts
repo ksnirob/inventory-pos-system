@@ -5,10 +5,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(value: number | string) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD"
+  const amount = new Intl.NumberFormat("en-BD", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(Number(value));
+
+  return `৳ ${amount}`;
 }
 
 export function formatDate(date: Date | string) {

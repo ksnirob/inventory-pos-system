@@ -1,14 +1,22 @@
 import { Plus, Pencil } from "lucide-react";
 import Link from "next/link";
 import { deleteCategory } from "@/actions/inventory";
+import { CategoryForm } from "@/components/forms/category-form";
 import { DeleteButton } from "@/components/delete-button";
 import { EmptyState } from "@/components/empty-state";
+import { ModalShell } from "@/components/modal-shell";
 import { PageHeader } from "@/components/page-header";
 import { LinkButton } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 
-export default async function CategoriesPage() {
+export default async function CategoriesPage({
+  searchParams
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  const modal = typeof resolvedSearchParams.modal === "string" ? resolvedSearchParams.modal : "";
   const categories = await prisma.category.findMany({
     include: { _count: { select: { products: true } } },
     orderBy: { name: "asc" }
@@ -16,7 +24,7 @@ export default async function CategoriesPage() {
 
   return (
     <>
-      <PageHeader title="Categories" description="Group products into clear inventory categories." action={{ href: "/categories/new", label: "Add category", icon: <Plus size={16} /> }} />
+      <PageHeader title="Categories" description="Group products into clear inventory categories." action={{ href: "/categories?modal=category", label: "Add category", icon: <Plus size={16} /> }} />
       {categories.length === 0 ? (
         <EmptyState title="No categories yet" message="Create categories before adding products." />
       ) : (
@@ -58,6 +66,11 @@ export default async function CategoriesPage() {
           </div>
         </div>
       )}
+      {modal === "category" ? (
+        <ModalShell title="Add category" description="Create a category for related inventory items." closeHref="/categories">
+          <CategoryForm embedded />
+        </ModalShell>
+      ) : null}
     </>
   );
 }

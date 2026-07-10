@@ -1,4 +1,4 @@
-import { PackageCheck, Plus, ShoppingCart, Truck } from "lucide-react";
+import { PackageCheck, Plus, ShoppingCart, TrendingUp, Truck } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
@@ -39,16 +39,24 @@ export default async function OrdersPage({
     orderBy: { orderDate: "desc" }
   });
 
-  const allOrders = await prisma.order.findMany();
+  const [allOrders, expenses] = await Promise.all([
+    prisma.order.findMany({ include: { items: { include: { product: true } } } }),
+    prisma.expense.findMany()
+  ]);
   const pendingCount = allOrders.filter((order) => order.status === "PENDING").length;
   const shippedCount = allOrders.filter((order) => order.status === "SHIPPED").length;
   const revenue = allOrders.reduce((total, order) => total + Number(order.total), 0);
+  const profit = allOrders.reduce((total, order) => {
+    const productCost = order.items.reduce((sum, item) => sum + Number(item.quantity) * Number(item.product.purchasePrice), 0);
+    return total + Number(order.total) - productCost;
+  }, 0) - expenses.reduce((total, expense) => total + Number(expense.amount), 0);
 
   return (
     <>
       <PageHeader title="Sales History" description="Review POS sales, payments, and order statuses." action={{ href: "/orders/new", label: "Open POS", icon: <Plus size={16} /> }} />
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total order value" value={formatCurrency(revenue)} icon={ShoppingCart} />
+        <StatCard label="Sales profit" value={formatCurrency(profit)} icon={TrendingUp} />
         <StatCard label="Pending orders" value={pendingCount} icon={PackageCheck} />
         <StatCard label="Shipped orders" value={shippedCount} icon={Truck} />
       </div>

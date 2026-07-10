@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {
   categorySchema,
+  expenseSchema,
   orderSchema,
   orderStatusSchema,
   productSchema,
@@ -45,6 +46,7 @@ function productInput(formData: FormData) {
     name: formValue(formData, "name"),
     sku: formValue(formData, "sku"),
     description: formValue(formData, "description"),
+    imageUrl: formValue(formData, "imageUrl"),
     categoryId: formValue(formData, "categoryId"),
     supplierId: formValue(formData, "supplierId"),
     purchasePrice: formValue(formData, "purchasePrice"),
@@ -52,6 +54,17 @@ function productInput(formData: FormData) {
     quantity: formValue(formData, "quantity"),
     minimumStockLevel: formValue(formData, "minimumStockLevel"),
     unit: formValue(formData, "unit")
+  };
+}
+
+function expenseInput(formData: FormData) {
+  return {
+    title: formValue(formData, "title"),
+    category: formValue(formData, "category"),
+    amount: formValue(formData, "amount"),
+    paymentMethod: formValue(formData, "paymentMethod"),
+    expenseDate: formValue(formData, "expenseDate"),
+    note: formValue(formData, "note")
   };
 }
 
@@ -69,6 +82,9 @@ function orderInput(formData: FormData) {
     status: formValue(formData, "status"),
     tax: formValue(formData, "tax"),
     discount: formValue(formData, "discount"),
+    deliveryArea: formValue(formData, "deliveryArea"),
+    deliveryCharge: formValue(formData, "deliveryCharge"),
+    costingAmount: formValue(formData, "costingAmount"),
     paymentMethod: formValue(formData, "paymentMethod"),
     paidAmount: formValue(formData, "paidAmount"),
     note: formValue(formData, "note"),
@@ -204,12 +220,52 @@ export async function saveProduct(id: string | undefined, formData: FormData): P
 
     revalidatePath("/products");
     revalidatePath("/");
+    revalidatePath("/reports");
     return { ok: true, message: id ? "Product updated." : "Product created." };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return { ok: false, message: "SKU values must be unique.", fieldErrors: { sku: ["This SKU already exists."] } };
     }
 
+    return mapError(error);
+  }
+}
+
+export async function saveExpense(id: string | undefined, formData: FormData): Promise<ActionState> {
+  const parsed = expenseSchema.safeParse(expenseInput(formData));
+
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors
+    };
+  }
+
+  try {
+    if (id) {
+      await prisma.expense.update({ where: { id }, data: parsed.data });
+    } else {
+      await prisma.expense.create({ data: parsed.data });
+    }
+
+    revalidatePath("/expenses");
+    revalidatePath("/reports");
+    revalidatePath("/");
+    return { ok: true, message: id ? "Expense updated." : "Expense recorded." };
+  } catch (error) {
+    return mapError(error);
+  }
+}
+
+export async function deleteExpense(id: string): Promise<ActionState> {
+  try {
+    await prisma.expense.delete({ where: { id } });
+    revalidatePath("/expenses");
+    revalidatePath("/reports");
+    revalidatePath("/");
+    return { ok: true, message: "Expense deleted." };
+  } catch (error) {
     return mapError(error);
   }
 }
@@ -343,7 +399,7 @@ export async function createOrder(formData: FormData): Promise<ActionState> {
         };
       });
 
-      const total = subtotal + parsed.data.tax - parsed.data.discount;
+      const total = subtotal + parsed.data.tax + parsed.data.deliveryCharge - parsed.data.discount;
       const changeDue = Math.max(parsed.data.paidAmount - total, 0);
 
       if (total < 0) {
@@ -371,6 +427,9 @@ export async function createOrder(formData: FormData): Promise<ActionState> {
           subtotal,
           tax: parsed.data.tax,
           discount: parsed.data.discount,
+          deliveryArea: parsed.data.deliveryArea,
+          deliveryCharge: parsed.data.deliveryCharge,
+          costingAmount: parsed.data.costingAmount,
           total,
           paymentMethod: parsed.data.paymentMethod,
           paidAmount: parsed.data.paidAmount,

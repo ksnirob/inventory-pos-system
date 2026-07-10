@@ -2,6 +2,8 @@ import { Plus } from "lucide-react";
 import { FilterBar } from "@/components/filter-bar";
 import { PageHeader } from "@/components/page-header";
 import { ProductTable } from "@/components/products/product-table";
+import { ProductForm } from "@/components/forms/product-form";
+import { ModalShell } from "@/components/modal-shell";
 import { LinkButton } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { getStockStatus } from "@/lib/utils";
@@ -17,12 +19,14 @@ export default async function ProductsPage({
   const query = typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : "";
   const category = typeof resolvedSearchParams.category === "string" ? resolvedSearchParams.category : "";
   const status = typeof resolvedSearchParams.status === "string" ? resolvedSearchParams.status : "";
+  const modal = typeof resolvedSearchParams.modal === "string" ? resolvedSearchParams.modal : "";
   const page = Math.max(Number(resolvedSearchParams.page ?? 1), 1);
   const sort = typeof resolvedSearchParams.sort === "string" ? resolvedSearchParams.sort : "createdAt";
   const direction = resolvedSearchParams.direction === "asc" ? "asc" : "desc";
 
-  const [categories, productsAll] = await Promise.all([
+  const [categories, suppliers, productsAll] = await Promise.all([
     prisma.category.findMany({ orderBy: { name: "asc" } }),
+    prisma.supplier.findMany({ orderBy: { name: "asc" } }),
     prisma.product.findMany({
       where: {
         AND: [
@@ -84,9 +88,20 @@ export default async function ProductsPage({
 
   return (
     <>
-      <PageHeader title="Products" description="Search, filter, sort, and manage all inventory items." action={{ href: "/products/new", label: "Add product", icon: <Plus size={16} /> }} />
-      <FilterBar search={query} categories={categories.map((item) => ({ value: item.id, label: item.name }))} />
+      <PageHeader title="Products" description="Search, filter, sort, and manage all inventory items." action={{ href: "/products?modal=product", label: "Add product", icon: <Plus size={16} /> }} />
+      <FilterBar
+        search={query}
+        category={category}
+        status={status}
+        categories={categories.map((item) => ({ value: item.id, label: item.name }))}
+        resetHref="/products"
+      />
       <ProductTable products={pageProducts} searchParams={resolvedSearchParams} />
+      {modal === "product" ? (
+        <ModalShell title="Add product" description="Create a product with image, stock, and pricing details." closeHref="/products">
+          <ProductForm categories={categories} suppliers={suppliers} embedded />
+        </ModalShell>
+      ) : null}
       <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
         <span>Page {page} of {totalPages}</span>
         <div className="flex gap-2">

@@ -96,6 +96,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <div className="mt-3 border-y border-dashed border-stone-400 py-2">
             <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(String(order.subtotal))}</span></div>
             <div className="flex justify-between"><span>Tax</span><span>{formatCurrency(String(order.tax))}</span></div>
+            <div className="flex justify-between"><span>Delivery</span><span>{formatCurrency(String(order.deliveryCharge))}</span></div>
             <div className="flex justify-between"><span>Discount</span><span>-{formatCurrency(String(order.discount))}</span></div>
             <div className="mt-2 flex justify-between border-t border-dashed border-stone-400 pt-2 text-[15px] font-black">
               <span>TOTAL</span>
@@ -105,6 +106,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
           <div className="mt-2 grid gap-1">
             <div className="flex justify-between"><span>Payment</span><span>{order.paymentMethod.replace("_", " ")}</span></div>
+            <div className="flex justify-between"><span>Delivery Area</span><span>{order.deliveryArea.replace("_", " ")}</span></div>
             <div className="flex justify-between"><span>Paid</span><span>{formatCurrency(String(order.paidAmount))}</span></div>
             <div className="flex justify-between text-[14px] font-black"><span>Change</span><span>{formatCurrency(String(order.changeDue))}</span></div>
             <div className="flex justify-between"><span>Status</span><span>{order.status}</span></div>
@@ -180,6 +182,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <dl className="grid gap-3 text-sm">
               <div className="flex justify-between"><dt className="text-stone-500">Subtotal</dt><dd className="font-semibold">{formatCurrency(String(order.subtotal))}</dd></div>
               <div className="flex justify-between"><dt className="text-stone-500">Tax</dt><dd className="font-semibold">{formatCurrency(String(order.tax))}</dd></div>
+              <div className="flex justify-between"><dt className="text-stone-500">Delivery</dt><dd className="font-semibold">{formatCurrency(String(order.deliveryCharge))}</dd></div>
               <div className="flex justify-between"><dt className="text-stone-500">Discount</dt><dd className="font-semibold">-{formatCurrency(String(order.discount))}</dd></div>
               <div className="flex justify-between border-t border-stone-200 pt-3 text-base"><dt className="font-semibold">Total</dt><dd className="font-bold">{formatCurrency(String(order.total))}</dd></div>
               <div className="flex justify-between"><dt className="text-stone-500">Paid</dt><dd className="font-semibold">{formatCurrency(String(order.paidAmount))}</dd></div>

@@ -25,6 +25,14 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       <PageHeader title={product.name} description={`SKU ${product.sku}`} action={{ href: `/products/${product.id}/edit`, label: "Edit product" }} />
       <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
         <section className="rounded-md border border-slate-200 bg-white p-5">
+          {product.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={product.imageUrl} alt={product.name} className="mb-5 h-56 w-full rounded-md object-cover" />
+          ) : (
+            <div className="mb-5 grid h-56 place-items-center rounded-md bg-cyan-50 text-4xl font-black text-cyan-700">
+              {product.name.slice(0, 2).toUpperCase()}
+            </div>
+          )}
           <div className="mb-5 flex items-center justify-between">
             <h2 className="font-semibold text-slate-950">Product details</h2>
             <StockBadge quantity={Number(product.quantity)} minimumStockLevel={Number(product.minimumStockLevel)} />

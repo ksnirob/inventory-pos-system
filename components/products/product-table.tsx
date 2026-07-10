@@ -11,6 +11,7 @@ type ProductRow = {
   id: string;
   name: string;
   sku: string;
+  imageUrl: string | null;
   purchasePrice: unknown;
   sellingPrice: unknown;
   quantity: unknown;
@@ -74,7 +75,19 @@ export function ProductTable({
           <tbody className="divide-y divide-slate-100">
             {products.map((product) => (
               <tr key={product.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-900">{product.name}</td>
+                <td className="px-4 py-3 font-medium text-slate-900">
+                  <div className="flex items-center gap-3">
+                    {product.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={product.imageUrl} alt={product.name} className="h-10 w-10 rounded-md object-cover" />
+                    ) : (
+                      <span className="grid h-10 w-10 place-items-center rounded-md bg-cyan-50 text-xs font-black text-cyan-700">
+                        {product.name.slice(0, 2).toUpperCase()}
+                      </span>
+                    )}
+                    <span>{product.name}</span>
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-slate-600">{product.sku}</td>
                 <td className="px-4 py-3 text-slate-600">{product.category.name}</td>
                 <td className="px-4 py-3 text-slate-600">{product.supplier.name}</td>
@@ -102,7 +115,7 @@ export function ProductTable({
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-500">
         <span>{products.length} product rows shown</span>
-        <LinkButton href="/products/new" className="h-9 px-3">
+        <LinkButton href="/products?modal=product" className="h-9 px-3">
           <Plus size={15} />
           Add product
         </LinkButton>

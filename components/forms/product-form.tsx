@@ -9,17 +9,20 @@ import { Button, LinkButton } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { Toast } from "@/components/toast";
 import { productSchema, type ProductInput } from "@/schemas/inventory";
+import { cn } from "@/lib/utils";
 
 type Option = { id: string; name: string };
 
 export function ProductForm({
   product,
   categories,
-  suppliers
+  suppliers,
+  embedded = false
 }: {
   product?: ProductInput & { id: string };
   categories: Option[];
   suppliers: Option[];
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -35,6 +38,7 @@ export function ProductForm({
       name: "",
       sku: "",
       description: "",
+      imageUrl: "",
       categoryId: "",
       supplierId: "",
       purchasePrice: 0,
@@ -67,10 +71,11 @@ export function ProductForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="grid max-w-5xl gap-4 rounded-md border border-slate-200 bg-white p-5">
+    <form onSubmit={handleSubmit(onSubmit)} className={cn("grid max-w-5xl gap-4", embedded ? "" : "rounded-md border border-slate-200 bg-white p-5")}>
       <div className="grid gap-4 lg:grid-cols-2">
         <Input label="Product name" {...register("name")} error={errors.name?.message} />
         <Input label="SKU" {...register("sku")} error={errors.sku?.message} />
+        <Input label="Product image URL" {...register("imageUrl")} error={errors.imageUrl?.message} />
         <Select label="Category" {...register("categoryId")} error={errors.categoryId?.message}>
           <option value="">Select category</option>
           {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}

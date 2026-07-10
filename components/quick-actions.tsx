@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, Boxes, FolderTree, Home, Package, Search, ShoppingCart, Truck, X } from "lucide-react";
+import { BarChart3, Boxes, FolderTree, Home, Package, ReceiptText, Search, ShoppingCart, Truck, X } from "lucide-react";
 
 const actions = [
   { href: "/", label: "Dashboard", hint: "Overview and recent activity", icon: Home },
@@ -10,6 +10,7 @@ const actions = [
   { href: "/orders", label: "Sales History", hint: "Track POS sales and payslips", icon: ShoppingCart },
   { href: "/products", label: "Products", hint: "Inventory items and stock status", icon: Package },
   { href: "/stock", label: "Stock Management", hint: "Stock in, out, and adjustment", icon: Boxes },
+  { href: "/expenses", label: "Expenses", hint: "Business costs and profit tracking", icon: ReceiptText },
   { href: "/categories", label: "Categories", hint: "Product groups", icon: FolderTree },
   { href: "/suppliers", label: "Suppliers", hint: "Vendor contact records", icon: Truck },
   { href: "/reports", label: "Reports", hint: "Inventory and transaction exports", icon: BarChart3 }
@@ -46,20 +47,21 @@ export function QuickActions() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="hidden h-10 min-w-72 items-center justify-between rounded-md border border-stone-200 bg-stone-50 px-3 text-sm text-stone-500 transition hover:border-stone-300 hover:bg-white md:flex"
+        className="flex h-11 w-full max-w-[360px] items-center justify-between rounded-md border border-cyan-100 bg-gradient-to-r from-white to-cyan-50 px-3 text-sm text-stone-600 shadow-sm shadow-cyan-100 transition hover:border-cyan-300 hover:bg-white"
       >
         <span className="flex items-center gap-2">
-          <Search size={16} />
-          Search pages and actions
+          <Search size={16} className="text-cyan-700" />
+          <span className="hidden sm:inline">Search pages and actions</span>
+          <span className="sm:hidden">Search</span>
         </span>
-        <kbd className="rounded border border-stone-200 bg-white px-1.5 py-0.5 text-xs text-stone-400">Ctrl K</kbd>
+        <kbd className="rounded border border-cyan-100 bg-white px-1.5 py-0.5 text-xs font-semibold text-cyan-700">Ctrl K</kbd>
       </button>
       {open ? (
         <div className="fixed inset-0 z-50 grid place-items-start bg-stone-950/35 px-4 py-20 backdrop-blur-sm sm:place-items-center sm:py-4">
           <button className="absolute inset-0" aria-label="Close quick actions" onClick={() => setOpen(false)} />
-          <div className="relative w-full max-w-xl overflow-hidden rounded-lg border border-stone-200 bg-white shadow-2xl shadow-stone-950/20">
-            <div className="flex items-center gap-3 border-b border-stone-200 px-4 py-3">
-              <Search size={18} className="text-stone-400" />
+          <div className="relative w-full max-w-xl overflow-hidden rounded-md border border-cyan-100 bg-white shadow-2xl shadow-stone-950/20">
+            <div className="flex items-center gap-3 border-b border-cyan-100 bg-gradient-to-r from-cyan-50 to-amber-50 px-4 py-3">
+              <Search size={18} className="text-cyan-700" />
               <input
                 autoFocus
                 value={query}
@@ -67,7 +69,7 @@ export function QuickActions() {
                 placeholder="Search orders, products, reports..."
                 className="h-10 flex-1 bg-transparent text-sm outline-none"
               />
-              <button type="button" className="rounded-md p-2 text-stone-400 hover:bg-stone-100" onClick={() => setOpen(false)} aria-label="Close">
+              <button type="button" className="rounded-md p-2 text-stone-500 hover:bg-white" onClick={() => setOpen(false)} aria-label="Close">
                 <X size={18} />
               </button>
             </div>
@@ -79,9 +81,9 @@ export function QuickActions() {
                     key={action.href}
                     href={action.href}
                     onClick={() => setOpen(false)}
-                    className="flex items-center gap-3 rounded-md px-3 py-3 transition hover:bg-amber-50"
+                    className="flex items-center gap-3 rounded-md px-3 py-3 transition hover:bg-cyan-50"
                   >
-                    <span className="grid h-9 w-9 place-items-center rounded-md bg-stone-100 text-stone-700">
+                    <span className="grid h-9 w-9 place-items-center rounded-md bg-gradient-to-br from-cyan-600 to-amber-400 text-white">
                       <Icon size={17} />
                     </span>
                     <span>

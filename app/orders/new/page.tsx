@@ -17,8 +17,10 @@ export default async function NewOrderPage() {
           id: product.id,
           name: product.name,
           sku: product.sku,
+          imageUrl: product.imageUrl,
           quantity: Number(product.quantity),
           sellingPrice: String(product.sellingPrice),
+          purchasePrice: String(product.purchasePrice),
           categoryName: product.category.name,
           unit: product.unit
         }))}

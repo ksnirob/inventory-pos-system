@@ -9,6 +9,7 @@ function csvCell(value: string | number) {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  const query = searchParams.get("q") || "";
   const productId = searchParams.get("product") || undefined;
   const typeValue = searchParams.get("type");
   const type =
@@ -19,11 +20,33 @@ export async function GET(request: Request) {
   const to = searchParams.get("to");
 
   const [products, transactions] = await Promise.all([
-    prisma.product.findMany({ include: { category: true, supplier: true }, orderBy: { name: "asc" } }),
+    prisma.product.findMany({
+      where: {
+        id: productId,
+        OR: query
+          ? [
+              { name: { contains: query } },
+              { sku: { contains: query } }
+            ]
+          : undefined
+      },
+      include: { category: true, supplier: true },
+      orderBy: { name: "asc" }
+    }),
     prisma.stockTransaction.findMany({
       where: {
         productId,
         type,
+        product: query
+          ? {
+              is: {
+                OR: [
+                  { name: { contains: query } },
+                  { sku: { contains: query } }
+                ]
+              }
+            }
+          : undefined,
         transactionDate: {
           gte: from ? new Date(from) : undefined,
           lte: to ? new Date(to) : undefined
@@ -35,7 +58,7 @@ export async function GET(request: Request) {
   ]);
 
   const inventoryRows = [
-    ["Report", "Product", "SKU", "Category", "Supplier", "Quantity", "Status", "Purchase Value", "Selling Value"],
+    ["Report", "Product", "SKU", "Category", "Supplier", "Quantity", "Status", "Purchase Value", "Selling Value", "Potential Profit"],
     ...products.map((product) => [
       "Current Inventory",
       product.name,
@@ -45,7 +68,8 @@ export async function GET(request: Request) {
       Number(product.quantity),
       getStockStatus(Number(product.quantity), Number(product.minimumStockLevel)),
       Number(product.purchasePrice) * Number(product.quantity),
-      Number(product.sellingPrice) * Number(product.quantity)
+      Number(product.sellingPrice) * Number(product.quantity),
+      (Number(product.sellingPrice) - Number(product.purchasePrice)) * Number(product.quantity)
     ])
   ];
 

@@ -9,11 +9,14 @@ import { Button, LinkButton } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Toast } from "@/components/toast";
 import { categorySchema, type CategoryInput } from "@/schemas/inventory";
+import { cn } from "@/lib/utils";
 
 export function CategoryForm({
-  category
+  category,
+  embedded = false
 }: {
   category?: CategoryInput & { id: string };
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -50,7 +53,7 @@ export function CategoryForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="grid max-w-2xl gap-4 rounded-md border border-slate-200 bg-white p-5">
+    <form onSubmit={handleSubmit(onSubmit)} className={cn("grid max-w-2xl gap-4", embedded ? "" : "rounded-md border border-slate-200 bg-white p-5")}>
       <Input label="Category name" {...register("name")} error={errors.name?.message} />
       <Textarea label="Description" {...register("description")} error={errors.description?.message} />
       <div className="flex flex-wrap justify-end gap-3">

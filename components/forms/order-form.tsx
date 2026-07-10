@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus, Search, ShoppingBag, Trash2 } from "lucide-react";
+import { MapPin, Minus, Plus, Search, ShoppingBag, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
@@ -16,8 +16,10 @@ type ProductOption = {
   id: string;
   name: string;
   sku: string;
+  imageUrl: string | null;
   quantity: number;
   sellingPrice: string;
+  purchasePrice: string;
   categoryName: string;
   unit: string;
 };
@@ -37,6 +39,8 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
+  const [deliveryArea, setDeliveryArea] = useState<"NONE" | "DHAKA" | "OUTSIDE_DHAKA">("NONE");
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
   const today = new Date().toISOString().slice(0, 10);
   const {
@@ -53,6 +57,8 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
       status: "DELIVERED",
       tax: 0,
       discount: 0,
+      deliveryArea: "NONE",
+      deliveryCharge: 0,
       paymentMethod: "CASH",
       paidAmount: 0,
       note: "",
@@ -85,10 +91,15 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
       };
     });
     const subtotal = lines.reduce((total, line) => total + line.lineTotal, 0);
-    const total = Math.max(subtotal + tax - discount, 0);
+    const total = Math.max(subtotal + tax + deliveryCharge - discount, 0);
     const change = Math.max(paidAmount - total, 0);
     return { lines, subtotal, total, change };
-  }, [cart, discount, paidAmount, products, tax]);
+  }, [cart, deliveryCharge, discount, paidAmount, products, tax]);
+
+  function updateDeliveryArea(nextArea: "NONE" | "DHAKA" | "OUTSIDE_DHAKA") {
+    setDeliveryArea(nextArea);
+    setDeliveryCharge(nextArea === "DHAKA" ? 60 : nextArea === "OUTSIDE_DHAKA" ? 120 : 0);
+  }
 
   function addProduct(productId: string) {
     const product = products.find((item) => item.id === productId);
@@ -159,6 +170,9 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
     formData.set("status", "DELIVERED");
     formData.set("tax", String(tax));
     formData.set("discount", String(discount));
+    formData.set("deliveryArea", deliveryArea);
+    formData.set("deliveryCharge", String(deliveryCharge));
+    formData.set("costingAmount", "0");
     formData.set("paymentMethod", values.paymentMethod);
     formData.set("paidAmount", String(paidAmount));
     formData.set("note", "POS sale");
@@ -190,8 +204,8 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-5 xl:grid-cols-[1fr_420px]">
-      <section className="rounded-md border border-stone-200 bg-white p-4 shadow-sm">
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-5 xl:grid-cols-[1fr_440px]">
+      <section className="rounded-md border border-cyan-100 bg-white p-4 shadow-sm shadow-cyan-100/70">
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
           <label className="relative flex-1">
             <span className="sr-only">Search products</span>
@@ -200,13 +214,13 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search product or SKU"
-              className="h-12 w-full rounded-md border border-stone-200 bg-stone-50 pl-10 pr-3 text-sm outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
+              className="h-12 w-full rounded-md border border-cyan-100 bg-cyan-50/60 pl-10 pr-3 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
             />
           </label>
           <select
             value={category}
             onChange={(event) => setCategory(event.target.value)}
-            className="h-12 rounded-md border border-stone-200 bg-white px-3 text-sm"
+            className="h-12 rounded-md border border-cyan-100 bg-white px-3 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
           >
             <option value="">All categories</option>
             {categories.map((item) => (
@@ -220,12 +234,22 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
               key={product.id}
               type="button"
               onClick={() => addProduct(product.id)}
-              className="rounded-md border border-stone-200 bg-stone-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50 hover:shadow-md"
+              className="rounded-md border border-cyan-100 bg-gradient-to-br from-white to-cyan-50/70 p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-md hover:shadow-cyan-100"
             >
               <div className="mb-3 flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-stone-950">{product.name}</p>
-                  <p className="mt-1 text-xs text-stone-500">{product.sku}</p>
+                <div className="flex gap-3">
+                  {product.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={product.imageUrl} alt={product.name} className="h-12 w-12 rounded-md object-cover" />
+                  ) : (
+                    <span className="grid h-12 w-12 place-items-center rounded-md bg-cyan-100 text-xs font-black text-cyan-700">
+                      {product.name.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                  <div>
+                    <p className="font-semibold text-stone-950">{product.name}</p>
+                    <p className="mt-1 text-xs text-stone-500">{product.sku}</p>
+                  </div>
                 </div>
                 <span className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-stone-600 ring-1 ring-stone-200">Stock {product.quantity} {product.unit}</span>
               </div>
@@ -238,7 +262,7 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
       </section>
 
       <aside className="rounded-md border border-stone-200 bg-white shadow-sm xl:sticky xl:top-24 xl:self-start">
-        <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-stone-200 bg-gradient-to-r from-cyan-50 to-amber-50 px-5 py-4">
           <div>
             <h2 className="font-semibold text-stone-950">POS Cart</h2>
             <p className="text-sm text-stone-500">{cartDetails.lines.length} items selected</p>
@@ -318,10 +342,36 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
               <Input label="Discount" type="number" step="0.01" value={discount} onChange={(event) => setDiscount(Number(event.target.value))} />
               <Input label="Paid" type="number" step="0.01" value={paidAmount} onChange={(event) => setPaidAmount(Number(event.target.value))} error={errors.paidAmount?.message} />
             </div>
+            <div className="rounded-md border border-cyan-100 bg-cyan-50/60 p-3">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-950">
+                <MapPin size={16} className="text-cyan-700" />
+                Delivery charge
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  ["NONE", "None"],
+                  ["DHAKA", "Dhaka"],
+                  ["OUTSIDE_DHAKA", "Outside"]
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => updateDeliveryArea(value as "NONE" | "DHAKA" | "OUTSIDE_DHAKA")}
+                    className={deliveryArea === value
+                      ? "h-10 rounded-md bg-cyan-700 px-2 text-xs font-bold text-white shadow-sm"
+                      : "h-10 rounded-md border border-cyan-100 bg-white px-2 text-xs font-semibold text-stone-600 hover:border-cyan-300"}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <Input label="Delivery amount" type="number" step="0.01" value={deliveryCharge} onChange={(event) => setDeliveryCharge(Number(event.target.value))} className="mt-3" />
+            </div>
           </div>
           <div className="grid gap-2 rounded-md bg-stone-50 p-4 text-sm">
             <div className="flex justify-between"><span className="text-stone-500">Subtotal</span><span className="font-semibold">{formatCurrency(cartDetails.subtotal)}</span></div>
             <div className="flex justify-between"><span className="text-stone-500">Tax</span><span className="font-semibold">{formatCurrency(tax)}</span></div>
+            <div className="flex justify-between"><span className="text-stone-500">Delivery</span><span className="font-semibold">{formatCurrency(deliveryCharge)}</span></div>
             <div className="flex justify-between"><span className="text-stone-500">Discount</span><span className="font-semibold">-{formatCurrency(discount)}</span></div>
             <div className="flex justify-between border-t border-stone-200 pt-2 text-lg"><span className="font-bold">Total</span><span className="font-bold">{formatCurrency(cartDetails.total)}</span></div>
             <div className="flex justify-between text-emerald-700"><span className="font-semibold">Change</span><span className="font-bold">{formatCurrency(cartDetails.change)}</span></div>

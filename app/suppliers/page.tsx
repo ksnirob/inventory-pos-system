@@ -2,11 +2,19 @@ import { Pencil, Plus } from "lucide-react";
 import { deleteSupplier } from "@/actions/inventory";
 import { DeleteButton } from "@/components/delete-button";
 import { EmptyState } from "@/components/empty-state";
+import { ModalShell } from "@/components/modal-shell";
 import { PageHeader } from "@/components/page-header";
+import { SupplierForm } from "@/components/forms/supplier-form";
 import { LinkButton } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 
-export default async function SuppliersPage() {
+export default async function SuppliersPage({
+  searchParams
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  const modal = typeof resolvedSearchParams.modal === "string" ? resolvedSearchParams.modal : "";
   const suppliers = await prisma.supplier.findMany({
     include: { _count: { select: { products: true } } },
     orderBy: { name: "asc" }
@@ -14,7 +22,7 @@ export default async function SuppliersPage() {
 
   return (
     <>
-      <PageHeader title="Suppliers" description="Manage supplier contact information." action={{ href: "/suppliers/new", label: "Add supplier", icon: <Plus size={16} /> }} />
+      <PageHeader title="Suppliers" description="Manage supplier contact information." action={{ href: "/suppliers?modal=supplier", label: "Add supplier", icon: <Plus size={16} /> }} />
       {suppliers.length === 0 ? (
         <EmptyState title="No suppliers yet" message="Add suppliers before assigning products." />
       ) : (
@@ -55,6 +63,11 @@ export default async function SuppliersPage() {
           </div>
         </div>
       )}
+      {modal === "supplier" ? (
+        <ModalShell title="Add supplier" description="Create a supplier profile with contact details." closeHref="/suppliers">
+          <SupplierForm embedded />
+        </ModalShell>
+      ) : null}
     </>
   );
 }

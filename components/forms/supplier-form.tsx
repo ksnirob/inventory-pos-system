@@ -9,8 +9,9 @@ import { Button, LinkButton } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Toast } from "@/components/toast";
 import { supplierSchema, type SupplierInput } from "@/schemas/inventory";
+import { cn } from "@/lib/utils";
 
-export function SupplierForm({ supplier }: { supplier?: SupplierInput & { id: string } }) {
+export function SupplierForm({ supplier, embedded = false }: { supplier?: SupplierInput & { id: string }; embedded?: boolean }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" }>();
@@ -46,7 +47,7 @@ export function SupplierForm({ supplier }: { supplier?: SupplierInput & { id: st
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="grid max-w-3xl gap-4 rounded-md border border-slate-200 bg-white p-5">
+    <form onSubmit={handleSubmit(onSubmit)} className={cn("grid max-w-3xl gap-4", embedded ? "" : "rounded-md border border-slate-200 bg-white p-5")}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Supplier name" {...register("name")} error={errors.name?.message} />
         <Input label="Contact person" {...register("contactPerson")} error={errors.contactPerson?.message} />
