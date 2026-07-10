@@ -38,21 +38,21 @@ export default async function ExpensesPage({
   return (
     <>
       <PageHeader title="Expenses" description="Track business costs separately from POS sales." />
-      <section className="mb-6 rounded-md border border-cyan-100 bg-white p-5 shadow-sm">
+      <section className="mb-6 rounded-md border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/[0.03]">
         <div className="mb-4 flex items-center gap-2">
-          <Plus size={18} className="text-cyan-700" />
+          <Plus size={18} className="text-[#ff6b4a]" />
           <h2 className="font-bold text-stone-950">Add expense</h2>
         </div>
         <ExpenseForm />
       </section>
 
-      <form className="mb-5 grid gap-3 rounded-md border border-cyan-100 bg-gradient-to-r from-cyan-50 to-amber-50 p-4 md:grid-cols-[1fr_160px_160px_auto]">
-        <input name="category" defaultValue={category} list="expense-page-categories" placeholder="Category" className="h-11 rounded-md border border-cyan-100 bg-white px-3 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100" />
+      <form className="mb-5 grid gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_160px_160px_auto]">
+        <input name="category" defaultValue={category} list="expense-page-categories" placeholder="Category" className="h-11 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" />
         <datalist id="expense-page-categories">
           {categories.map((item) => <option key={item} value={item} />)}
         </datalist>
-        <input type="date" name="from" defaultValue={from} className="h-11 rounded-md border border-cyan-100 bg-white px-3 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100" aria-label="From date" />
-        <input type="date" name="to" defaultValue={to} className="h-11 rounded-md border border-cyan-100 bg-white px-3 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100" aria-label="To date" />
+        <input type="date" name="from" defaultValue={from} className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" aria-label="From date" />
+        <input type="date" name="to" defaultValue={to} className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" aria-label="To date" />
         <Button type="submit">Filter</Button>
       </form>
 
@@ -77,7 +77,7 @@ export default async function ExpensesPage({
             </thead>
             <tbody className="divide-y divide-stone-100">
               {expenses.map((expense) => (
-                <tr key={expense.id} className="hover:bg-cyan-50/40">
+                <tr key={expense.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3">
                     <p className="font-semibold text-stone-950">{expense.title}</p>
                     <p className="text-xs text-stone-500">{expense.note || "No note"}</p>

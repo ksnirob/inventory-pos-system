@@ -17,6 +17,13 @@ export const supplierSchema = z.object({
   address: optionalText
 });
 
+export const customerSchema = z.object({
+  name: requiredText.max(120, "Customer name must be 120 characters or fewer"),
+  email: z.string().trim().email("Enter a valid email").optional().or(z.literal("")),
+  phone: optionalText,
+  address: optionalText
+});
+
 export const productSchema = z.object({
   name: requiredText.max(120, "Name must be 120 characters or fewer"),
   sku: requiredText.max(60, "SKU must be 60 characters or fewer"),
@@ -82,6 +89,7 @@ export const orderStatusSchema = z.object({
 
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type SupplierInput = z.infer<typeof supplierSchema>;
+export type CustomerInput = z.infer<typeof customerSchema>;
 export type ProductInput = z.infer<typeof productSchema>;
 export type ExpenseInput = z.infer<typeof expenseSchema>;
 export type StockTransactionInput = z.infer<typeof stockTransactionSchema>;

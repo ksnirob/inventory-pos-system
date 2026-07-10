@@ -3,7 +3,7 @@
 import { MapPin, Minus, Plus, Search, ShoppingBag, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { createOrder } from "@/actions/inventory";
 import { Toast } from "@/components/toast";
 import { Button, LinkButton } from "@/components/ui/button";
@@ -30,7 +30,15 @@ type CartLine = {
   enteredUnit: string;
 };
 
-export function OrderForm({ products }: { products: ProductOption[] }) {
+type CustomerOption = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+};
+
+export function OrderForm({ products, customers }: { products: ProductOption[]; customers: CustomerOption[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" }>();
@@ -38,15 +46,17 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
   const [category, setCategory] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [discount, setDiscount] = useState(0);
-  const [tax, setTax] = useState(0);
   const [deliveryArea, setDeliveryArea] = useState<"NONE" | "DHAKA" | "OUTSIDE_DHAKA">("NONE");
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const today = new Date().toISOString().slice(0, 10);
   const {
     register,
     handleSubmit,
     setError,
+    setValue,
+    control,
     formState: { errors }
   } = useForm<OrderInput>({
     defaultValues: {
@@ -55,7 +65,6 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
       customerPhone: "",
       customerAddress: "",
       status: "DELIVERED",
-      tax: 0,
       discount: 0,
       deliveryArea: "NONE",
       deliveryCharge: 0,
@@ -66,6 +75,24 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
       items: []
     }
   });
+
+  const customerNameValue = useWatch({ control, name: "customerName" });
+  const customerPhoneValue = useWatch({ control, name: "customerPhone" });
+  const customerNameField = register("customerName");
+  const customerPhoneField = register("customerPhone");
+  const customerNeedle = (customerNameValue === "Walk-in customer" ? customerPhoneValue ?? "" : `${customerNameValue ?? ""} ${customerPhoneValue ?? ""}`).trim().toLowerCase();
+  const matchingCustomers = useMemo(() => {
+    if (selectedCustomerId || !customerNeedle || customerNeedle === "walk-in customer") return [];
+    return customers.filter((customer) => `${customer.name} ${customer.phone ?? ""} ${customer.email ?? ""}`.toLowerCase().includes(customerNeedle)).slice(0, 5);
+  }, [customerNeedle, customers, selectedCustomerId]);
+
+  function chooseCustomer(customer: CustomerOption) {
+    setSelectedCustomerId(customer.id);
+    setValue("customerName", customer.name, { shouldValidate: true });
+    setValue("customerPhone", customer.phone ?? "", { shouldValidate: true });
+    setValue("customerEmail", customer.email ?? "", { shouldValidate: true });
+    setValue("customerAddress", customer.address ?? "", { shouldValidate: true });
+  }
 
   const categories = useMemo(() => Array.from(new Set(products.map((product) => product.categoryName))).sort(), [products]);
   const filteredProducts = useMemo(() => {
@@ -91,10 +118,10 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
       };
     });
     const subtotal = lines.reduce((total, line) => total + line.lineTotal, 0);
-    const total = Math.max(subtotal + tax + deliveryCharge - discount, 0);
+    const total = Math.max(subtotal + deliveryCharge - discount, 0);
     const change = Math.max(paidAmount - total, 0);
     return { lines, subtotal, total, change };
-  }, [cart, deliveryCharge, discount, paidAmount, products, tax]);
+  }, [cart, deliveryCharge, discount, paidAmount, products]);
 
   function updateDeliveryArea(nextArea: "NONE" | "DHAKA" | "OUTSIDE_DHAKA") {
     setDeliveryArea(nextArea);
@@ -168,7 +195,7 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
     formData.set("customerPhone", values.customerPhone ?? "");
     formData.set("customerAddress", values.customerAddress ?? "");
     formData.set("status", "DELIVERED");
-    formData.set("tax", String(tax));
+    formData.set("tax", "0");
     formData.set("discount", String(discount));
     formData.set("deliveryArea", deliveryArea);
     formData.set("deliveryCharge", String(deliveryCharge));
@@ -204,23 +231,23 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-5 xl:grid-cols-[1fr_440px]">
-      <section className="rounded-md border border-cyan-100 bg-white p-4 shadow-sm shadow-cyan-100/70">
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/[0.03] sm:p-5">
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
           <label className="relative flex-1">
             <span className="sr-only">Search products</span>
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search product or SKU"
-              className="h-12 w-full rounded-md border border-cyan-100 bg-cyan-50/60 pl-10 pr-3 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+              className="h-12 w-full rounded-md border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
             />
           </label>
           <select
             value={category}
             onChange={(event) => setCategory(event.target.value)}
-            className="h-12 rounded-md border border-cyan-100 bg-white px-3 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+            className="h-12 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
           >
             <option value="">All categories</option>
             {categories.map((item) => (
@@ -234,7 +261,7 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
               key={product.id}
               type="button"
               onClick={() => addProduct(product.id)}
-              className="rounded-md border border-cyan-100 bg-gradient-to-br from-white to-cyan-50/70 p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-md hover:shadow-cyan-100"
+              className="group relative overflow-hidden rounded-md border border-slate-200 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"
             >
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div className="flex gap-3">
@@ -242,40 +269,46 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={product.imageUrl} alt={product.name} className="h-12 w-12 rounded-md object-cover" />
                   ) : (
-                    <span className="grid h-12 w-12 place-items-center rounded-md bg-cyan-100 text-xs font-black text-cyan-700">
+                    <span className="grid h-12 w-12 place-items-center rounded-md bg-emerald-50 text-xs font-black text-emerald-700">
                       {product.name.slice(0, 2).toUpperCase()}
                     </span>
                   )}
                   <div>
-                    <p className="font-semibold text-stone-950">{product.name}</p>
-                    <p className="mt-1 text-xs text-stone-500">{product.sku}</p>
+                    <p className="font-semibold text-slate-950">{product.name}</p>
+                    <p className="mt-1 text-xs text-slate-500">{product.sku}</p>
                   </div>
                 </div>
-                <span className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-stone-600 ring-1 ring-stone-200">Stock {product.quantity} {product.unit}</span>
+                <span className="rounded-full bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-600 ring-1 ring-slate-200">{product.quantity} {product.unit}</span>
               </div>
-              <p className="text-lg font-bold text-stone-950">{formatCurrency(product.sellingPrice)}</p>
-              <p className="mt-1 text-xs text-stone-500">{product.categoryName}</p>
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-lg font-bold text-slate-950">{formatCurrency(product.sellingPrice)}</p>
+                  <p className="mt-1 text-xs text-slate-500">{product.categoryName}</p>
+                </div>
+                <span className="grid h-8 w-8 place-items-center rounded-md bg-slate-900 text-lg font-medium text-white transition group-hover:bg-emerald-700">+</span>
+              </div>
+              <span className="absolute inset-x-0 bottom-0 h-0.5 bg-emerald-500 opacity-0 transition group-hover:opacity-100" />
             </button>
           ))}
           {filteredProducts.length === 0 ? <p className="col-span-full py-10 text-center text-sm text-stone-500">No matching products.</p> : null}
         </div>
       </section>
 
-      <aside className="rounded-md border border-stone-200 bg-white shadow-sm xl:sticky xl:top-24 xl:self-start">
-        <div className="flex items-center justify-between border-b border-stone-200 bg-gradient-to-r from-cyan-50 to-amber-50 px-5 py-4">
+      <aside className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-md shadow-slate-900/[0.05] xl:sticky xl:top-24 xl:self-start">
+        <div className="flex items-center justify-between bg-[#171a1f] px-5 py-4 text-white">
           <div>
-            <h2 className="font-semibold text-stone-950">POS Cart</h2>
-            <p className="text-sm text-stone-500">{cartDetails.lines.length} items selected</p>
+            <h2 className="font-semibold">Current sale</h2>
+            <p className="text-xs text-white/50">{cartDetails.lines.length} items selected</p>
           </div>
-          <ShoppingBag className="text-stone-400" size={22} />
+          <span className="grid h-9 w-9 place-items-center rounded-md bg-white/10"><ShoppingBag className="text-[#ff8a6f]" size={19} /></span>
         </div>
         <div className="max-h-[360px] overflow-y-auto p-4">
           {cartDetails.lines.map((line) => (
-            <div key={line.productId} className="mb-3 rounded-md border border-stone-200 bg-stone-50 p-3">
+            <div key={line.productId} className="mb-3 rounded-md border border-slate-200 bg-slate-50 p-3">
               <div className="flex justify-between gap-3">
                 <div>
-                  <p className="font-semibold text-stone-950">{line.product?.name}</p>
-                  <p className="text-xs text-stone-500">
+                  <p className="font-semibold text-slate-950">{line.product?.name}</p>
+                  <p className="text-xs text-slate-500">
                     {formatCurrency(line.unitPrice)} / {line.product?.unit}
                   </p>
                 </div>
@@ -328,23 +361,52 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
 
         <div className="border-t border-stone-200 p-4">
           <div className="mb-4 grid gap-3">
-            <Input label="Customer name" {...register("customerName")} error={errors.customerName?.message} />
+            <div className="relative">
+              <Input
+                label="Customer name or phone"
+                placeholder="Start typing to find a customer"
+                {...customerNameField}
+                onChange={(event) => {
+                  customerNameField.onChange(event);
+                  setSelectedCustomerId(null);
+                }}
+                error={errors.customerName?.message}
+              />
+              {matchingCustomers.length ? (
+                <div className="absolute inset-x-0 top-[76px] z-10 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl shadow-slate-900/10">
+                  <p className="border-b border-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Matching customers</p>
+                  {matchingCustomers.map((customer) => (
+                    <button key={customer.id} type="button" onClick={() => chooseCustomer(customer)} className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition hover:bg-emerald-50">
+                      <span><span className="block text-sm font-semibold text-slate-950">{customer.name}</span><span className="block text-xs text-slate-500">{customer.phone || customer.email || "No contact"}</span></span>
+                      <span className="text-xs font-semibold text-emerald-700">Use</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Input label="Phone" {...register("customerPhone")} error={errors.customerPhone?.message} />
+              <Input
+                label="Phone"
+                {...customerPhoneField}
+                onChange={(event) => {
+                  customerPhoneField.onChange(event);
+                  setSelectedCustomerId(null);
+                }}
+                error={errors.customerPhone?.message}
+              />
               <Select label="Payment" {...register("paymentMethod")} error={errors.paymentMethod?.message}>
                 {paymentMethods.map((method) => (
                   <option key={method} value={method}>{paymentMethodLabels[method]}</option>
                 ))}
               </Select>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Input label="Tax" type="number" step="0.01" value={tax} onChange={(event) => setTax(Number(event.target.value))} />
+            <div className="grid gap-3 sm:grid-cols-2">
               <Input label="Discount" type="number" step="0.01" value={discount} onChange={(event) => setDiscount(Number(event.target.value))} />
               <Input label="Paid" type="number" step="0.01" value={paidAmount} onChange={(event) => setPaidAmount(Number(event.target.value))} error={errors.paidAmount?.message} />
             </div>
-            <div className="rounded-md border border-cyan-100 bg-cyan-50/60 p-3">
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
               <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-950">
-                <MapPin size={16} className="text-cyan-700" />
+                <MapPin size={16} className="text-[#ff6b4a]" />
                 Delivery charge
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -358,8 +420,8 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
                     type="button"
                     onClick={() => updateDeliveryArea(value as "NONE" | "DHAKA" | "OUTSIDE_DHAKA")}
                     className={deliveryArea === value
-                      ? "h-10 rounded-md bg-cyan-700 px-2 text-xs font-bold text-white shadow-sm"
-                      : "h-10 rounded-md border border-cyan-100 bg-white px-2 text-xs font-semibold text-stone-600 hover:border-cyan-300"}
+                      ? "h-10 rounded-md bg-slate-900 px-2 text-xs font-bold text-white shadow-sm"
+                      : "h-10 rounded-md border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-600 hover:border-emerald-300"}
                   >
                     {label}
                   </button>
@@ -368,12 +430,11 @@ export function OrderForm({ products }: { products: ProductOption[] }) {
               <Input label="Delivery amount" type="number" step="0.01" value={deliveryCharge} onChange={(event) => setDeliveryCharge(Number(event.target.value))} className="mt-3" />
             </div>
           </div>
-          <div className="grid gap-2 rounded-md bg-stone-50 p-4 text-sm">
+          <div className="grid gap-2 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm">
             <div className="flex justify-between"><span className="text-stone-500">Subtotal</span><span className="font-semibold">{formatCurrency(cartDetails.subtotal)}</span></div>
-            <div className="flex justify-between"><span className="text-stone-500">Tax</span><span className="font-semibold">{formatCurrency(tax)}</span></div>
             <div className="flex justify-between"><span className="text-stone-500">Delivery</span><span className="font-semibold">{formatCurrency(deliveryCharge)}</span></div>
             <div className="flex justify-between"><span className="text-stone-500">Discount</span><span className="font-semibold">-{formatCurrency(discount)}</span></div>
-            <div className="flex justify-between border-t border-stone-200 pt-2 text-lg"><span className="font-bold">Total</span><span className="font-bold">{formatCurrency(cartDetails.total)}</span></div>
+            <div className="flex justify-between border-t border-slate-200 pt-3 text-lg"><span className="font-bold text-slate-950">Total</span><span className="font-bold text-slate-950">{formatCurrency(cartDetails.total)}</span></div>
             <div className="flex justify-between text-emerald-700"><span className="font-semibold">Change</span><span className="font-bold">{formatCurrency(cartDetails.change)}</span></div>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">

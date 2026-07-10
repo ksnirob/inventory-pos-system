@@ -29,7 +29,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             // eslint-disable-next-line @next/next/no-img-element
             <img src={product.imageUrl} alt={product.name} className="mb-5 h-56 w-full rounded-md object-cover" />
           ) : (
-            <div className="mb-5 grid h-56 place-items-center rounded-md bg-cyan-50 text-4xl font-black text-cyan-700">
+            <div className="mb-5 grid h-56 place-items-center rounded-md bg-emerald-50 text-4xl font-black text-emerald-700">
               {product.name.slice(0, 2).toUpperCase()}
             </div>
           )}

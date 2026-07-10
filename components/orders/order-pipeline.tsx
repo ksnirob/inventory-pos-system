@@ -74,7 +74,7 @@ export function OrderPipeline({ orders }: { orders: PipelineOrder[] }) {
       </div>
       <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
         {visibleOrders.slice(0, 4).map((order) => (
-          <Link key={order.id} href={`/orders/${order.id}`} className="rounded-md border border-stone-200 bg-white p-3 transition hover:border-amber-300 hover:bg-amber-50">
+          <Link key={order.id} href={`/orders/${order.id}`} className="rounded-md border border-slate-200 bg-white p-3 transition hover:border-emerald-300 hover:bg-emerald-50/50">
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="text-sm font-semibold text-stone-950">{order.orderNumber}</span>
               <OrderStatusBadge status={order.status} />

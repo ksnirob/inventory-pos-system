@@ -104,7 +104,7 @@ export function StockForm({ products }: { products: ProductOption[] }) {
         </Select>
         <div className="grid gap-1.5">
           <span className="text-sm font-medium text-stone-700">Quantity</span>
-          <div className="grid grid-cols-[1fr_96px] overflow-hidden rounded-md border border-stone-200 bg-white transition focus-within:border-amber-500 focus-within:ring-4 focus-within:ring-amber-100">
+          <div className="grid grid-cols-[1fr_96px] overflow-hidden rounded-md border border-slate-200 bg-white transition focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-100">
             <input
               type="number"
               min="0"

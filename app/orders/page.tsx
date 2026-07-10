@@ -71,14 +71,14 @@ export default async function OrdersPage({
         }))}
       />
 
-      <form className="mb-5 grid gap-3 rounded-md border border-stone-200 bg-white p-4 lg:grid-cols-[1fr_180px_auto]">
+      <form className="mb-5 grid gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/[0.03] lg:grid-cols-[1fr_180px_auto]">
         <input
           name="q"
           defaultValue={query}
           placeholder="Search order number, customer, or phone"
-          className="h-11 rounded-md border border-stone-200 bg-white px-3 text-sm outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
+          className="h-11 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
         />
-        <select name="status" defaultValue={status} className="h-11 rounded-md border border-stone-200 bg-white px-3 text-sm">
+        <select name="status" defaultValue={status} className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
           <option value="">All statuses</option>
           <option value="PENDING">Pending</option>
           <option value="CONFIRMED">Confirmed</option>
@@ -86,7 +86,7 @@ export default async function OrdersPage({
           <option value="DELIVERED">Delivered</option>
           <option value="CANCELLED">Cancelled</option>
         </select>
-        <button className="h-11 rounded-md border border-stone-200 bg-stone-900 px-4 text-sm font-semibold text-white" type="submit">Filter</button>
+        <button className="h-11 rounded-md border border-emerald-700 bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-800" type="submit">Filter</button>
       </form>
 
       <div className="overflow-hidden rounded-md border border-stone-200 bg-white shadow-sm">
@@ -118,7 +118,7 @@ export default async function OrdersPage({
                   <td className="px-4 py-3 font-semibold text-stone-950">{formatCurrency(String(order.total))}</td>
                   <td className="px-4 py-3 text-stone-600">{formatDate(order.orderDate)}</td>
                   <td className="px-4 py-3 text-right">
-                    <Link href={`/orders/${order.id}`} className="font-semibold text-stone-950 hover:text-amber-700">View</Link>
+                    <Link href={`/orders/${order.id}`} className="font-semibold text-emerald-700 hover:text-emerald-900">View</Link>
                   </td>
                 </tr>
               ))}

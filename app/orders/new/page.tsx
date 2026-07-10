@@ -3,11 +3,14 @@ import { PageHeader } from "@/components/page-header";
 import { prisma } from "@/lib/prisma";
 
 export default async function NewOrderPage() {
-  const products = await prisma.product.findMany({
-    where: { quantity: { gt: 0 } },
-    include: { category: true },
-    orderBy: { name: "asc" }
-  });
+  const [products, customers] = await Promise.all([
+    prisma.product.findMany({
+      where: { quantity: { gt: 0 } },
+      include: { category: true },
+      orderBy: { name: "asc" }
+    }),
+    prisma.customer.findMany({ orderBy: { updatedAt: "desc" }, take: 100 })
+  ]);
 
   return (
     <>
@@ -23,6 +26,13 @@ export default async function NewOrderPage() {
           purchasePrice: String(product.purchasePrice),
           categoryName: product.category.name,
           unit: product.unit
+        }))}
+        customers={customers.map((customer) => ({
+          id: customer.id,
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+          address: customer.address
         }))}
       />
     </>

@@ -26,6 +26,7 @@ export function ProductForm({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" }>();
   const {
     register,
@@ -52,6 +53,7 @@ export function ProductForm({
   function onSubmit(values: ProductInput) {
     const formData = new FormData();
     Object.entries(values).forEach(([key, value]) => formData.set(key, String(value ?? "")));
+    if (imageFile) formData.set("image", imageFile);
 
     startTransition(async () => {
       const result = await saveProduct(product?.id, formData);
@@ -75,7 +77,23 @@ export function ProductForm({
       <div className="grid gap-4 lg:grid-cols-2">
         <Input label="Product name" {...register("name")} error={errors.name?.message} />
         <Input label="SKU" {...register("sku")} error={errors.sku?.message} />
-        <Input label="Product image URL" {...register("imageUrl")} error={errors.imageUrl?.message} />
+        <input type="hidden" {...register("imageUrl")} />
+        <label className="grid gap-1.5 text-[13px] font-semibold text-slate-700">
+          Product image
+          <span className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-dashed border-emerald-300 bg-emerald-50/50 px-3 text-sm font-medium text-emerald-800 transition hover:border-emerald-500 hover:bg-emerald-50">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
+              className="min-w-0 flex-1 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-emerald-700 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white"
+            />
+          </span>
+          <span className="text-[11px] font-normal text-slate-500">JPG, PNG, or WEBP up to 2MB{imageFile ? ` · ${imageFile.name}` : ""}</span>
+          {product?.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={product.imageUrl} alt="Current product" className="h-16 w-16 rounded-lg object-cover ring-1 ring-slate-200" />
+          ) : null}
+        </label>
         <Select label="Category" {...register("categoryId")} error={errors.categoryId?.message}>
           <option value="">Select category</option>
           {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}

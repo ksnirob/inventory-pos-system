@@ -1,10 +1,14 @@
 "use server";
 
 import { Prisma } from "@prisma/client";
+import { mkdir, writeFile } from "fs/promises";
 import { revalidatePath } from "next/cache";
+import path from "path";
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import {
   categorySchema,
+  customerSchema,
   expenseSchema,
   orderSchema,
   orderStatusSchema,
@@ -101,6 +105,26 @@ function orderInput(formData: FormData) {
 function createOrderNumber() {
   const stamp = new Date().toISOString().replace(/\D/g, "").slice(0, 14);
   return `ORD-${stamp}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+}
+
+async function saveProductImage(formData: FormData) {
+  const file = formData.get("image");
+  if (!(file instanceof File) || file.size === 0) return null;
+
+  const extensions: Record<string, string> = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp"
+  };
+  const extension = extensions[file.type];
+  if (!extension) throw new Error("Use a JPG, PNG, or WEBP image.");
+  if (file.size > 2 * 1024 * 1024) throw new Error("Product images must be 2MB or smaller.");
+
+  const uploadDirectory = path.join(process.cwd(), "public", "uploads");
+  await mkdir(uploadDirectory, { recursive: true });
+  const fileName = `${randomUUID()}${extension}`;
+  await writeFile(path.join(uploadDirectory, fileName), Buffer.from(await file.arrayBuffer()));
+  return `/uploads/${fileName}`;
 }
 
 export async function saveCategory(id: string | undefined, formData: FormData): Promise<ActionState> {
@@ -200,8 +224,63 @@ export async function deleteSupplier(id: string): Promise<ActionState> {
   }
 }
 
+export async function saveCustomer(id: string | undefined, formData: FormData): Promise<ActionState> {
+  const parsed = customerSchema.safeParse({
+    name: formValue(formData, "name"),
+    email: formValue(formData, "email"),
+    phone: formValue(formData, "phone"),
+    address: formValue(formData, "address")
+  });
+
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors
+    };
+  }
+
+  try {
+    if (id) {
+      await prisma.customer.update({ where: { id }, data: parsed.data });
+    } else {
+      await prisma.customer.create({ data: parsed.data });
+    }
+
+    revalidatePath("/customers");
+    revalidatePath("/orders");
+    return { ok: true, message: id ? "Customer updated." : "Customer created." };
+  } catch (error) {
+    return mapError(error);
+  }
+}
+
+export async function deleteCustomer(id: string): Promise<ActionState> {
+  try {
+    const orderCount = await prisma.order.count({ where: { customerId: id } });
+    if (orderCount > 0) {
+      return { ok: false, message: "Customers with sales history cannot be deleted." };
+    }
+
+    await prisma.customer.delete({ where: { id } });
+    revalidatePath("/customers");
+    return { ok: true, message: "Customer deleted." };
+  } catch (error) {
+    return mapError(error);
+  }
+}
+
 export async function saveProduct(id: string | undefined, formData: FormData): Promise<ActionState> {
-  const parsed = productSchema.safeParse(productInput(formData));
+  let imageUrl: string | null = null;
+  try {
+    imageUrl = await saveProductImage(formData);
+  } catch (error) {
+    return mapError(error);
+  }
+
+  const values = productInput(formData);
+  if (imageUrl) values.imageUrl = imageUrl;
+  const parsed = productSchema.safeParse(values);
 
   if (!parsed.success) {
     return {
@@ -410,14 +489,30 @@ export async function createOrder(formData: FormData): Promise<ActionState> {
         throw new Error("Paid amount must cover the sale total.");
       }
 
-      const customer = await tx.customer.create({
-        data: {
-          name: parsed.data.customerName,
-          email: parsed.data.customerEmail,
-          phone: parsed.data.customerPhone,
-          address: parsed.data.customerAddress
-        }
-      });
+      const customerMatch = parsed.data.customerPhone
+        ? { phone: parsed.data.customerPhone }
+        : parsed.data.customerEmail
+          ? { email: parsed.data.customerEmail }
+          : { name: parsed.data.customerName };
+      const existingCustomer = await tx.customer.findFirst({ where: customerMatch });
+      const customer = existingCustomer
+        ? await tx.customer.update({
+            where: { id: existingCustomer.id },
+            data: {
+              name: parsed.data.customerName,
+              email: parsed.data.customerEmail || existingCustomer.email,
+              phone: parsed.data.customerPhone || existingCustomer.phone,
+              address: parsed.data.customerAddress || existingCustomer.address
+            }
+          })
+        : await tx.customer.create({
+            data: {
+              name: parsed.data.customerName,
+              email: parsed.data.customerEmail,
+              phone: parsed.data.customerPhone,
+              address: parsed.data.customerAddress
+            }
+          });
 
       const order = await tx.order.create({
         data: {
@@ -478,6 +573,7 @@ export async function createOrder(formData: FormData): Promise<ActionState> {
     });
 
     revalidatePath("/orders");
+    revalidatePath("/customers");
     revalidatePath("/products");
     revalidatePath("/stock");
     revalidatePath("/");

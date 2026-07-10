@@ -34,8 +34,7 @@ export default async function ProductsPage({
             ? {
                 OR: [
                   { name: { contains: query } },
-                  { sku: { contains: query } },
-                  { description: { contains: query } }
+                  { sku: { contains: query } }
                 ]
               }
             : {},

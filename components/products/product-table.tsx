@@ -81,7 +81,7 @@ export function ProductTable({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={product.imageUrl} alt={product.name} className="h-10 w-10 rounded-md object-cover" />
                     ) : (
-                      <span className="grid h-10 w-10 place-items-center rounded-md bg-cyan-50 text-xs font-black text-cyan-700">
+                      <span className="grid h-10 w-10 place-items-center rounded-md bg-emerald-50 text-xs font-black text-emerald-700">
                         {product.name.slice(0, 2).toUpperCase()}
                       </span>
                     )}
