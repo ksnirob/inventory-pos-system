@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([name])
+}
+
+model Supplier {
+  id            String    @id @default(cuid())
+  name          String
+  contactPerson String?
+  email         String?
+  phone         String?
+  address       String?
+  products      Product[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([name])
+}
+
+model Product {
+  id                String             @id @default(cuid())
+  name              String
+  sku               String             @unique
+  description       String?
+  purchasePrice     Decimal
+  sellingPrice      Decimal
+  quantity          Decimal            @default(0)
+  minimumStockLevel Decimal            @default(0)
+  unit              String
+  categoryId        String
+  supplierId        String
+  category          Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  supplier          Supplier           @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  transactions      StockTransaction[]
+  orderItems        OrderItem[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([name])
+  @@index([categoryId])
+  @@index([supplierId])
+  @@index([quantity])
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([email])
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  orderNumber String      @unique
+  customerId  String
+  customer    Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  status      String      @default("PENDING")
+  subtotal    Decimal
+  tax         Decimal     @default(0)
+  discount    Decimal     @default(0)
+  total       Decimal
+  paymentMethod String    @default("CASH")
+  paidAmount    Decimal   @default(0)
+  changeDue     Decimal   @default(0)
+  note        String?
+  orderDate   DateTime    @default(now())
+  items       OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+  @@index([orderDate])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity  Decimal
+  enteredQuantity Decimal?
+  enteredUnit String?
+  unitPrice Decimal
+  lineTotal Decimal
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model StockTransaction {
+  id              String               @id @default(cuid())
+  productId       String
+  product         Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type            String
+  quantity        Decimal
+  previousQuantity Decimal
+  newQuantity     Decimal
+  referenceNumber String?
+  note            String?
+  transactionDate DateTime             @default(now())
+  createdAt       DateTime             @default(now())
+
+  @@index([productId])
+  @@index([type])
+  @@index([transactionDate])
+}
