@@ -19,7 +19,7 @@ export function ProductForm({
   suppliers,
   embedded = false
 }: {
-  product?: ProductInput & { id: string };
+  product?: ProductInput & { id: string; previewImageUrl?: string | null };
   categories: Option[];
   suppliers: Option[];
   embedded?: boolean;
@@ -89,9 +89,9 @@ export function ProductForm({
             />
           </span>
           <span className="text-[11px] font-normal text-slate-500">JPG, PNG, or WEBP up to 2MB{imageFile ? ` · ${imageFile.name}` : ""}</span>
-          {product?.imageUrl ? (
+          {product?.previewImageUrl || product?.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={product.imageUrl} alt="Current product" className="h-16 w-16 rounded-lg object-cover ring-1 ring-slate-200" />
+            <img src={product.previewImageUrl || product.imageUrl} alt="Current product" className="h-16 w-16 rounded-lg object-cover ring-1 ring-slate-200" />
           ) : null}
         </label>
         <Select label="Category" {...register("categoryId")} error={errors.categoryId?.message}>

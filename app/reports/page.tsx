@@ -1,4 +1,4 @@
-import { Download, PackageCheck, TrendingUp, Wallet } from "lucide-react";
+import { Download, PackageCheck, TrendingUp, Truck, Wallet } from "lucide-react";
 import { FilterBar } from "@/components/filter-bar";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
@@ -7,6 +7,41 @@ import { LinkButton } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { stockTransactionTypes, type StockTransactionType } from "@/types/inventory";
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+function dateRange(period: string, from: string, to: string) {
+  const today = startOfDay(new Date());
+
+  if (period === "today") {
+    return { gte: today, lt: addDays(today, 1) };
+  }
+
+  if (period === "week") {
+    const day = today.getDay();
+    const mondayOffset = day === 0 ? -6 : 1 - day;
+    const weekStart = addDays(today, mondayOffset);
+    return { gte: weekStart, lt: addDays(weekStart, 7) };
+  }
+
+  if (period === "month") {
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    return { gte: monthStart, lt: new Date(today.getFullYear(), today.getMonth() + 1, 1) };
+  }
+
+  return {
+    gte: from ? startOfDay(new Date(from)) : undefined,
+    lt: to ? addDays(startOfDay(new Date(to)), 1) : undefined
+  };
+}
 
 export default async function ReportsPage({
   searchParams
@@ -23,6 +58,15 @@ export default async function ReportsPage({
       : "";
   const from = typeof resolvedSearchParams.from === "string" ? resolvedSearchParams.from : "";
   const to = typeof resolvedSearchParams.to === "string" ? resolvedSearchParams.to : "";
+  const period = typeof resolvedSearchParams.period === "string" ? resolvedSearchParams.period : "";
+  const sort = resolvedSearchParams.sort === "asc" ? "asc" : "desc";
+  const activeDateRange = dateRange(period, from, to);
+  const dateWhere = activeDateRange.gte || activeDateRange.lt
+    ? {
+        gte: activeDateRange.gte,
+        lt: activeDateRange.lt
+      }
+    : undefined;
 
   const [products, transactions, orders, expenses] = await Promise.all([
     prisma.product.findMany({ include: { category: true, supplier: true }, orderBy: { name: "asc" } }),
@@ -41,18 +85,25 @@ export default async function ReportsPage({
             }
           : undefined,
         transactionDate: {
-          gte: from ? new Date(from) : undefined,
-          lte: to ? new Date(to) : undefined
+          gte: activeDateRange.gte,
+          lt: activeDateRange.lt
         }
       },
       include: { product: true },
-      orderBy: { transactionDate: "desc" }
+      orderBy: { transactionDate: sort }
     }),
     prisma.order.findMany({
+      where: {
+        orderDate: dateWhere
+      },
       include: { items: { include: { product: true } } },
-      orderBy: { orderDate: "desc" }
+      orderBy: { orderDate: sort }
     }),
-    prisma.expense.findMany()
+    prisma.expense.findMany({
+      where: {
+        expenseDate: dateWhere
+      }
+    })
   ]);
 
   const reportProducts = products.filter((product) => {
@@ -61,23 +112,28 @@ export default async function ReportsPage({
     return matchesProduct && matchesQuery;
   });
   const lowStock = reportProducts.filter((product) => Number(product.quantity) > 0 && Number(product.quantity) <= Number(product.minimumStockLevel));
-  const outOfStock = reportProducts.filter((product) => Number(product.quantity) <= 0);
-  const purchaseValue = reportProducts.reduce((total, product) => total + Number(product.purchasePrice) * Number(product.quantity), 0);
-  const sellingValue = reportProducts.reduce((total, product) => total + Number(product.sellingPrice) * Number(product.quantity), 0);
-  const potentialProfit = sellingValue - purchaseValue;
-  const salesRevenue = orders.reduce((total, order) => total + Number(order.total), 0);
-  const salesProfit = orders.reduce((total, order) => {
-    const productCost = order.items.reduce((sum, item) => sum + Number(item.quantity) * Number(item.product.purchasePrice), 0);
-    return total + Number(order.total) - productCost;
+  const deliveredOrders = orders.filter((order) => order.status === "DELIVERED");
+  const productSales = deliveredOrders.reduce((total, order) => total + Number(order.subtotal) - Number(order.discount), 0);
+  const deliveryCollected = deliveredOrders.reduce((total, order) => total + Number(order.deliveryCharge), 0);
+  const productCost = deliveredOrders.reduce((total, order) => {
+    return total + order.items.reduce((sum, item) => sum + Number(item.quantity) * Number(item.product.purchasePrice), 0);
   }, 0);
+  const grossProfit = productSales - productCost;
   const totalExpenses = expenses.reduce((total, expense) => total + Number(expense.amount), 0);
-  const netProfit = salesProfit - totalExpenses;
+  const netProfit = grossProfit - totalExpenses;
+  const inventoryCost = reportProducts.reduce((total, product) => total + Number(product.purchasePrice) * Number(product.quantity), 0);
+  const inventorySellingValue = reportProducts.reduce((total, product) => total + Number(product.sellingPrice) * Number(product.quantity), 0);
+  const stockPotentialProfit = inventorySellingValue - inventoryCost;
+  const deliveredCount = deliveredOrders.length;
+  const stockAlerts = lowStock.length + reportProducts.filter((product) => Number(product.quantity) <= 0).length;
   const exportParams = new URLSearchParams();
   if (query) exportParams.set("q", query);
   if (productId) exportParams.set("product", productId);
   if (type) exportParams.set("type", type);
   if (from) exportParams.set("from", from);
   if (to) exportParams.set("to", to);
+  if (period) exportParams.set("period", period);
+  if (sort) exportParams.set("sort", sort);
 
   return (
     <>
@@ -88,6 +144,8 @@ export default async function ReportsPage({
         type={type}
         from={from}
         to={to}
+        period={period}
+        sort={sort}
         products={products.map((product) => ({ value: product.id, label: product.name }))}
         showTransactionType
         resetHref="/reports"
@@ -99,18 +157,19 @@ export default async function ReportsPage({
         </LinkButton>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Current inventory items" value={reportProducts.length} icon={PackageCheck} />
-        <StatCard label="Low-stock report" value={lowStock.length} icon={PackageCheck} />
-        <StatCard label="Out-of-stock report" value={outOfStock.length} icon={PackageCheck} />
-        <StatCard label="Transactions shown" value={transactions.length} icon={Download} />
-        <StatCard label="Total purchase value" value={formatCurrency(purchaseValue)} icon={Wallet} />
-        <StatCard label="Potential selling value" value={formatCurrency(sellingValue)} icon={Wallet} />
-        <StatCard label="Potential profit" value={formatCurrency(potentialProfit)} icon={TrendingUp} />
-        <StatCard label="POS gross profit" value={formatCurrency(salesProfit)} icon={TrendingUp} />
-        <StatCard label="Expenses" value={formatCurrency(totalExpenses)} icon={Wallet} />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <StatCard label="Delivered orders" value={deliveredCount} icon={PackageCheck} />
+        <StatCard label="Product sales" value={formatCurrency(productSales)} icon={Wallet} />
+        <StatCard label="Delivery collected" value={formatCurrency(deliveryCollected)} icon={Truck} />
+        <StatCard label="Product cost" value={formatCurrency(productCost)} icon={Wallet} />
+        <StatCard label="Product profit" value={formatCurrency(grossProfit)} icon={TrendingUp} />
         <StatCard label="Net profit" value={formatCurrency(netProfit)} icon={TrendingUp} />
-        <StatCard label="POS sales revenue" value={formatCurrency(salesRevenue)} icon={Wallet} />
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <StatCard label="Inventory items" value={reportProducts.length} icon={PackageCheck} />
+        <StatCard label="Stock alerts" value={stockAlerts} icon={PackageCheck} />
+        <StatCard label="Stock potential profit" value={formatCurrency(stockPotentialProfit)} icon={TrendingUp} />
       </div>
 
       <section className="mt-6 overflow-hidden rounded-md border border-slate-200 bg-white">

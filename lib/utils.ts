@@ -4,6 +4,28 @@ export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
 }
 
+const appTimeZone = "Asia/Dhaka";
+
+function dateParts(date: Date | string, timeZone = appTimeZone) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date(date));
+
+  return {
+    year: parts.find((part) => part.type === "year")?.value ?? "1970",
+    month: parts.find((part) => part.type === "month")?.value ?? "01",
+    day: parts.find((part) => part.type === "day")?.value ?? "01"
+  };
+}
+
+export function formatDateInputValue(date: Date | string = new Date()) {
+  const parts = dateParts(date);
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
 export function formatCurrency(value: number | string) {
   const amount = new Intl.NumberFormat("en-BD", {
     minimumFractionDigits: 2,
@@ -15,6 +37,7 @@ export function formatCurrency(value: number | string) {
 
 export function formatDate(date: Date | string) {
   return new Intl.DateTimeFormat("en-US", {
+    timeZone: appTimeZone,
     year: "numeric",
     month: "short",
     day: "numeric"

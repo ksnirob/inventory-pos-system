@@ -4,28 +4,30 @@ import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { StockBadge } from "@/components/ui/badge";
 import { prisma } from "@/lib/prisma";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, formatQuantity } from "@/lib/utils";
 
 export default async function DashboardPage() {
-  const [products, categoryCount, supplierCount, recentTransactions, recentProducts, recentOrders, orderCount, expenses] = await Promise.all([
+  const [products, categoryCount, supplierCount, recentProducts, recentOrders, orderCount, totalSales, expenses] = await Promise.all([
     prisma.product.findMany({ include: { category: true, supplier: true }, orderBy: { name: "asc" } }),
     prisma.category.count(),
     prisma.supplier.count(),
-    prisma.stockTransaction.findMany({ include: { product: true }, orderBy: { transactionDate: "desc" }, take: 6 }),
     prisma.product.findMany({ include: { category: true }, orderBy: { createdAt: "desc" }, take: 6 }),
     prisma.order.findMany({ include: { customer: true, items: { include: { product: true } } }, orderBy: { orderDate: "desc" }, take: 6 }),
     prisma.order.count(),
+    prisma.order.aggregate({ _sum: { total: true } }),
     prisma.expense.findMany({ orderBy: { expenseDate: "desc" }, take: 30 })
   ]);
 
   const totalStock = products.reduce((total, product) => total + Number(product.quantity), 0);
   const lowStockProducts = products.filter((product) => Number(product.quantity) > 0 && Number(product.quantity) <= Number(product.minimumStockLevel));
   const outOfStockProducts = products.filter((product) => Number(product.quantity) <= 0);
-  const inventoryValue = products.reduce((total, product) => total + Number(product.purchasePrice) * Number(product.quantity), 0);
+  const totalSalesValue = Number(totalSales._sum.total ?? 0);
   const recentExpense = expenses.reduce((total, expense) => total + Number(expense.amount), 0);
-  const recentProfit = recentOrders.reduce((total, order) => {
+  const deliveredRecentOrders = recentOrders.filter((order) => order.status === "DELIVERED");
+  const recentProfit = deliveredRecentOrders.reduce((total, order) => {
     const productCost = order.items.reduce((sum, item) => sum + Number(item.quantity) * Number(item.product.purchasePrice), 0);
-    return total + Number(order.total) - productCost;
+    const productSales = Number(order.subtotal) - Number(order.discount);
+    return total + productSales - productCost;
   }, 0) - recentExpense;
 
   const pulse = [
@@ -38,13 +40,13 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Dashboard" description="A clear view of sales, stock, and today’s retail activity." />
+      <PageHeader title="Dashboard" description="A clear view of sales, stock, and today's retail activity." />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Products" value={products.length} icon={Package} />
-        <StatCard label="Total sales" value={orderCount} icon={ShoppingCart} />
-        <StatCard label="Inventory value" value={formatCurrency(inventoryValue)} icon={Boxes} />
-        <StatCard label="Recent net profit" value={formatCurrency(recentProfit)} icon={TrendingUp} />
+        <StatCard label="Sales orders" value={orderCount} icon={ShoppingCart} />
+        <StatCard label="Total sales" value={formatCurrency(totalSalesValue)} icon={Boxes} />
+        <StatCard label="Net profit" value={formatCurrency(recentProfit)} icon={TrendingUp} />
       </div>
 
       <section className="mt-5 rounded-md border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/[0.03]">
@@ -53,19 +55,27 @@ export default async function DashboardPage() {
             const Icon = item.icon;
             return (
               <div key={item.label} className="flex items-center gap-3 rounded-md p-3 transition hover:bg-slate-50">
-                <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-md ${item.color}`}><Icon size={17} /></span>
-                <div><p className="text-lg font-bold text-slate-950">{item.value}</p><p className="text-xs text-slate-500">{item.label}</p></div>
+                <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-md ${item.color}`}>
+                  <Icon size={17} />
+                </span>
+                <div>
+                  <p className="text-lg font-bold text-slate-950">{item.value}</p>
+                  <p className="text-xs text-slate-500">{item.label}</p>
+                </div>
               </div>
             );
           })}
         </div>
       </section>
 
-      <div className="mt-5 grid gap-5 xl:grid-cols-3">
+      <div className="mt-5 grid gap-5 xl:grid-cols-2">
         <DashboardList title="Recent sales" href="/orders" linkLabel="View sales">
           {recentOrders.map((order) => (
             <div key={order.id} className="flex items-center justify-between gap-3 px-5 py-4">
-              <div className="min-w-0"><p className="truncate font-semibold text-slate-900">{order.orderNumber}</p><p className="truncate text-xs text-slate-500">{order.customer.name} · {order.items.length} items</p></div>
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-slate-900">{order.orderNumber}</p>
+                <p className="truncate text-xs text-slate-500">{order.customer.name} - {order.items.length} items</p>
+              </div>
               <p className="shrink-0 font-bold text-slate-950">{formatCurrency(String(order.total))}</p>
             </div>
           ))}
@@ -75,21 +85,17 @@ export default async function DashboardPage() {
         <DashboardList title="New products" href="/products" linkLabel="View products">
           {recentProducts.map((product) => (
             <div key={product.id} className="flex items-center justify-between gap-3 px-5 py-4">
-              <div className="min-w-0"><p className="truncate font-semibold text-slate-900">{product.name}</p><p className="truncate text-xs text-slate-500">{product.category.name} · {formatDate(product.createdAt)}</p></div>
-              <StockBadge quantity={Number(product.quantity)} minimumStockLevel={Number(product.minimumStockLevel)} />
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-slate-900">{product.name}</p>
+                <p className="truncate text-xs text-slate-500">{product.category.name} - {formatDate(product.createdAt)}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2 text-right">
+                <span className="font-bold text-slate-950">{formatQuantity(String(product.quantity), product.unit)}</span>
+                <StockBadge quantity={Number(product.quantity)} minimumStockLevel={Number(product.minimumStockLevel)} />
+              </div>
             </div>
           ))}
           {recentProducts.length === 0 ? <EmptyRow text="No products yet" /> : null}
-        </DashboardList>
-
-        <DashboardList title="Stock activity" href="/stock" linkLabel="Manage stock">
-          {recentTransactions.map((transaction) => (
-            <div key={transaction.id} className="flex items-center justify-between gap-3 px-5 py-4">
-              <div className="min-w-0"><p className="truncate font-semibold text-slate-900">{transaction.product.name}</p><p className="text-xs text-slate-500">{transaction.type.replace("_", " ")} · {formatDate(transaction.transactionDate)}</p></div>
-              <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">{Number(transaction.quantity)}</span>
-            </div>
-          ))}
-          {recentTransactions.length === 0 ? <EmptyRow text="No stock activity yet" /> : null}
         </DashboardList>
       </div>
     </>

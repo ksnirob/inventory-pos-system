@@ -76,7 +76,7 @@ export const orderSchema = z.object({
   deliveryCharge: z.coerce.number().min(0, "Delivery charge cannot be negative").default(0),
   costingAmount: z.coerce.number().min(0, "Costing cannot be negative").default(0),
   paymentMethod: z.enum(paymentMethods),
-  paidAmount: z.coerce.number().min(0, "Paid amount cannot be negative"),
+  paidAmount: z.coerce.number().min(0, "Amount cannot be negative"),
   note: optionalText,
   orderDate: z.coerce.date(),
   items: z

@@ -8,6 +8,7 @@ import { saveExpense } from "@/actions/inventory";
 import { Toast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
+import { formatDateInputValue } from "@/lib/utils";
 import { expenseSchema, type ExpenseInput } from "@/schemas/inventory";
 import { paymentMethodLabels, paymentMethods } from "@/types/inventory";
 
@@ -15,7 +16,7 @@ export function ExpenseForm({ onSaved }: { onSaved?: () => void }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" }>();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatDateInputValue();
   const {
     register,
     handleSubmit,
@@ -37,7 +38,7 @@ export function ExpenseForm({ onSaved }: { onSaved?: () => void }) {
   function onSubmit(values: ExpenseInput) {
     const formData = new FormData();
     Object.entries(values).forEach(([key, value]) => {
-      formData.set(key, value instanceof Date ? value.toISOString().slice(0, 10) : String(value ?? ""));
+      formData.set(key, value instanceof Date ? formatDateInputValue(value) : String(value ?? ""));
     });
 
     startTransition(async () => {

@@ -1,10 +1,7 @@
 "use server";
 
 import { Prisma } from "@prisma/client";
-import { mkdir, writeFile } from "fs/promises";
 import { revalidatePath } from "next/cache";
-import path from "path";
-import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import {
   categorySchema,
@@ -103,11 +100,20 @@ function orderInput(formData: FormData) {
 }
 
 function createOrderNumber() {
-  const stamp = new Date().toISOString().replace(/\D/g, "").slice(0, 14);
+  const stamp = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Dhaka",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(new Date()).filter((part) => part.type !== "literal").map((part) => part.value).join("");
   return `ORD-${stamp}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 }
 
-async function saveProductImage(formData: FormData) {
+async function readProductImage(formData: FormData) {
   const file = formData.get("image");
   if (!(file instanceof File) || file.size === 0) return null;
 
@@ -120,11 +126,10 @@ async function saveProductImage(formData: FormData) {
   if (!extension) throw new Error("Use a JPG, PNG, or WEBP image.");
   if (file.size > 2 * 1024 * 1024) throw new Error("Product images must be 2MB or smaller.");
 
-  const uploadDirectory = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadDirectory, { recursive: true });
-  const fileName = `${randomUUID()}${extension}`;
-  await writeFile(path.join(uploadDirectory, fileName), Buffer.from(await file.arrayBuffer()));
-  return `/uploads/${fileName}`;
+  return {
+    data: Buffer.from(await file.arrayBuffer()),
+    mimeType: file.type
+  };
 }
 
 export async function saveCategory(id: string | undefined, formData: FormData): Promise<ActionState> {
@@ -271,15 +276,14 @@ export async function deleteCustomer(id: string): Promise<ActionState> {
 }
 
 export async function saveProduct(id: string | undefined, formData: FormData): Promise<ActionState> {
-  let imageUrl: string | null = null;
+  let image: Awaited<ReturnType<typeof readProductImage>> = null;
   try {
-    imageUrl = await saveProductImage(formData);
+    image = await readProductImage(formData);
   } catch (error) {
     return mapError(error);
   }
 
   const values = productInput(formData);
-  if (imageUrl) values.imageUrl = imageUrl;
   const parsed = productSchema.safeParse(values);
 
   if (!parsed.success) {
@@ -291,10 +295,19 @@ export async function saveProduct(id: string | undefined, formData: FormData): P
   }
 
   try {
+    const productData = image
+      ? {
+          ...parsed.data,
+          imageUrl: null,
+          imageData: image.data,
+          imageMimeType: image.mimeType
+        }
+      : parsed.data;
+
     if (id) {
-      await prisma.product.update({ where: { id }, data: parsed.data });
+      await prisma.product.update({ where: { id }, data: productData });
     } else {
-      await prisma.product.create({ data: parsed.data });
+      await prisma.product.create({ data: productData });
     }
 
     revalidatePath("/products");
@@ -354,6 +367,8 @@ export async function deleteProduct(id: string): Promise<ActionState> {
     await prisma.product.delete({ where: { id } });
     revalidatePath("/products");
     revalidatePath("/");
+    revalidatePath("/reports");
+    revalidatePath("/stock");
     return { ok: true, message: "Product deleted." };
   } catch (error) {
     return mapError(error);
@@ -486,7 +501,7 @@ export async function createOrder(formData: FormData): Promise<ActionState> {
       }
 
       if (parsed.data.status !== "PENDING" && parsed.data.paidAmount < total) {
-        throw new Error("Paid amount must cover the sale total.");
+        throw new Error("Amount must cover the sale total.");
       }
 
       const customerMatch = parsed.data.customerPhone

@@ -7,6 +7,41 @@ function csvCell(value: string | number) {
   return `"${String(value).replaceAll("\"", "\"\"")}"`;
 }
 
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+function dateRange(period: string | null, from: string | null, to: string | null) {
+  const today = startOfDay(new Date());
+
+  if (period === "today") {
+    return { gte: today, lt: addDays(today, 1) };
+  }
+
+  if (period === "week") {
+    const day = today.getDay();
+    const mondayOffset = day === 0 ? -6 : 1 - day;
+    const weekStart = addDays(today, mondayOffset);
+    return { gte: weekStart, lt: addDays(weekStart, 7) };
+  }
+
+  if (period === "month") {
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    return { gte: monthStart, lt: new Date(today.getFullYear(), today.getMonth() + 1, 1) };
+  }
+
+  return {
+    gte: from ? startOfDay(new Date(from)) : undefined,
+    lt: to ? addDays(startOfDay(new Date(to)), 1) : undefined
+  };
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q") || "";
@@ -18,6 +53,9 @@ export async function GET(request: Request) {
       : undefined;
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const period = searchParams.get("period");
+  const sort = searchParams.get("sort") === "asc" ? "asc" : "desc";
+  const activeDateRange = dateRange(period, from, to);
 
   const [products, transactions] = await Promise.all([
     prisma.product.findMany({
@@ -48,12 +86,12 @@ export async function GET(request: Request) {
             }
           : undefined,
         transactionDate: {
-          gte: from ? new Date(from) : undefined,
-          lte: to ? new Date(to) : undefined
+          gte: activeDateRange.gte,
+          lt: activeDateRange.lt
         }
       },
       include: { product: true },
-      orderBy: { transactionDate: "desc" }
+      orderBy: { transactionDate: sort }
     })
   ]);
 

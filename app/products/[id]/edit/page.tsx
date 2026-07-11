@@ -14,6 +14,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   if (!product) {
     notFound();
   }
+  const productImageUrl = product.imageMimeType ? `/api/products/${product.id}/image` : product.imageUrl;
 
   return (
     <>
@@ -27,6 +28,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           sku: product.sku,
           description: product.description ?? "",
           imageUrl: product.imageUrl ?? "",
+          previewImageUrl: productImageUrl,
           categoryId: product.categoryId,
           supplierId: product.supplierId,
           purchasePrice: Number(product.purchasePrice),

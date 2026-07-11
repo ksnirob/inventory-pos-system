@@ -19,15 +19,16 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   if (!product) {
     notFound();
   }
+  const productImageUrl = product.imageMimeType ? `/api/products/${product.id}/image` : product.imageUrl;
 
   return (
     <>
       <PageHeader title={product.name} description={`SKU ${product.sku}`} action={{ href: `/products/${product.id}/edit`, label: "Edit product" }} />
       <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
         <section className="rounded-md border border-slate-200 bg-white p-5">
-          {product.imageUrl ? (
+          {productImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={product.imageUrl} alt={product.name} className="mb-5 h-56 w-full rounded-md object-cover" />
+            <img src={productImageUrl} alt={product.name} className="mb-5 h-56 w-full rounded-md object-cover" />
           ) : (
             <div className="mb-5 grid h-56 place-items-center rounded-md bg-emerald-50 text-4xl font-black text-emerald-700">
               {product.name.slice(0, 2).toUpperCase()}

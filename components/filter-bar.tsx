@@ -14,6 +14,8 @@ export function FilterBar({
   type,
   from,
   to,
+  period,
+  sort,
   categories = [],
   showTransactionType = false,
   products = []
@@ -25,6 +27,8 @@ export function FilterBar({
   type?: string;
   from?: string;
   to?: string;
+  period?: string;
+  sort?: string;
   categories?: Option[];
   showTransactionType?: boolean;
   products?: Option[];
@@ -35,10 +39,14 @@ export function FilterBar({
   const currentParams = useSearchParams();
   const [query, setQuery] = useState(search ?? "");
 
-  function updateFilter(key: string, value: string) {
+  function updateFilter(key: string, value: string, extra: Record<string, string> = {}) {
     const params = new URLSearchParams(currentParams.toString());
     if (value) params.set(key, value);
     else params.delete(key);
+    Object.entries(extra).forEach(([extraKey, extraValue]) => {
+      if (extraValue) params.set(extraKey, extraValue);
+      else params.delete(extraKey);
+    });
     params.delete("page");
     const nextQuery = params.toString();
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
@@ -62,7 +70,7 @@ export function FilterBar({
 
   return (
     <div className="mb-5 rounded-xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/[0.03]">
-      <div className="grid gap-2 lg:grid-cols-[minmax(220px,1fr)_repeat(4,minmax(150px,220px))]">
+      <div className="grid gap-2 lg:grid-cols-[minmax(220px,1fr)_repeat(6,minmax(140px,200px))]">
         <label className="relative">
           <span className="sr-only">Search</span>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600" size={17} />
@@ -100,8 +108,27 @@ export function FilterBar({
           <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-900" size={17} />
         </label>
         {showTransactionType ? <>
-          <input type="date" name="from" defaultValue={from} onChange={(event) => updateFilter("from", event.target.value)} className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" aria-label="From date" />
-          <input type="date" name="to" defaultValue={to} onChange={(event) => updateFilter("to", event.target.value)} className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" aria-label="To date" />
+          <label className="relative">
+            <span className="sr-only">Date period</span>
+            <select name="period" defaultValue={period} onChange={(event) => updateFilter("period", event.target.value, { from: "", to: "" })} className="h-11 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-12 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
+              <option value="">All dates</option>
+              <option value="today">Today</option>
+              <option value="week">This week</option>
+              <option value="month">This month</option>
+              <option value="custom">Custom range</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-900" size={17} />
+          </label>
+          <label className="relative">
+            <span className="sr-only">Sort by date</span>
+            <select name="sort" defaultValue={sort} onChange={(event) => updateFilter("sort", event.target.value)} className="h-11 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-12 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
+              <option value="desc">Newest first</option>
+              <option value="asc">Oldest first</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-900" size={17} />
+          </label>
+          <input type="date" name="from" defaultValue={from} onChange={(event) => updateFilter("from", event.target.value, { period: "custom" })} className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" aria-label="From date" />
+          <input type="date" name="to" defaultValue={to} onChange={(event) => updateFilter("to", event.target.value, { period: "custom" })} className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" aria-label="To date" />
         </> : null}
       </div>
     </div>

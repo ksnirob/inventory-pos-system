@@ -9,7 +9,7 @@ import { Toast } from "@/components/toast";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { appConfig } from "@/lib/app-config";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDateInputValue, formatQuantity } from "@/lib/utils";
 import type { OrderInput } from "@/schemas/inventory";
 import { paymentMethodLabels, paymentMethods } from "@/types/inventory";
 
@@ -51,7 +51,7 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatDateInputValue();
   const {
     register,
     handleSubmit,
@@ -65,14 +65,14 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
       customerEmail: "",
       customerPhone: "",
       customerAddress: "",
-      status: "DELIVERED",
+      status: "CONFIRMED",
       discount: 0,
       deliveryArea: "NONE",
       deliveryCharge: 0,
       paymentMethod: "CASH",
       paidAmount: 0,
       note: "",
-      orderDate: new Date(today),
+      orderDate: new Date(),
       items: []
     }
   });
@@ -123,6 +123,14 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
     const change = Math.max(paidAmount - total, 0);
     return { lines, subtotal, total, change };
   }, [cart, deliveryCharge, discount, paidAmount, products]);
+
+  const cartReservedStock = useMemo(() => {
+    return cart.reduce<Record<string, number>>((reserved, line) => {
+      const product = products.find((item) => item.id === line.productId);
+      reserved[line.productId] = (reserved[line.productId] ?? 0) + toStockQuantity(line, product);
+      return reserved;
+    }, {});
+  }, [cart, products]);
 
   function updateDeliveryArea(nextArea: "NONE" | "DHAKA" | "OUTSIDE_DHAKA") {
     setDeliveryArea(nextArea);
@@ -201,7 +209,7 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
     formData.set("customerEmail", values.customerEmail ?? "");
     formData.set("customerPhone", values.customerPhone ?? "");
     formData.set("customerAddress", values.customerAddress ?? "");
-    formData.set("status", "DELIVERED");
+    formData.set("status", "CONFIRMED");
     formData.set("tax", "0");
     formData.set("discount", String(discount));
     formData.set("deliveryArea", deliveryArea);
@@ -210,7 +218,7 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
     formData.set("paymentMethod", values.paymentMethod);
     formData.set("paidAmount", String(paidAmount));
     formData.set("note", "POS sale");
-    formData.set("orderDate", today);
+    formData.set("orderDate", new Date().toISOString());
     cart.forEach((line) => {
       const product = products.find((item) => item.id === line.productId);
       formData.append("productId", line.productId);
@@ -267,42 +275,55 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
           </label>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-          {filteredProducts.map((product) => (
-            <button
-              key={product.id}
-              type="button"
-              onClick={() => addProduct(product.id)}
-              className="group relative flex min-h-64 flex-col overflow-hidden rounded-md border border-slate-200 bg-white text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"
-            >
-              {product.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={product.imageUrl} alt={product.name} className="h-32 w-full border-b border-slate-100 bg-slate-50 object-cover" />
-              ) : (
-                <span className="grid h-32 w-full place-items-center border-b border-emerald-100 bg-emerald-50 text-2xl font-black text-emerald-700">
-                  {product.name.slice(0, 2).toUpperCase()}
-                </span>
-              )}
-              <div className="flex items-start justify-between gap-3 p-3 pb-2">
-                <div className="min-w-0">
-                  <p className="line-clamp-2 font-semibold leading-5 text-slate-950">{product.name}</p>
-                  <p className="mt-0.5 truncate text-xs text-slate-500">{product.sku}</p>
+          {filteredProducts.map((product) => {
+            const availableQuantity = Math.max(0, product.quantity - (cartReservedStock[product.id] ?? 0));
+            const isUnavailable = availableQuantity <= 0;
+
+            return (
+              <button
+                key={product.id}
+                type="button"
+                onClick={() => addProduct(product.id)}
+                disabled={isUnavailable}
+                className={isUnavailable
+                  ? "group relative flex min-h-64 cursor-not-allowed flex-col overflow-hidden rounded-md border border-slate-200 bg-slate-50 text-left opacity-70"
+                  : "group relative flex min-h-64 flex-col overflow-hidden rounded-md border border-slate-200 bg-white text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"}
+              >
+                {product.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={product.imageUrl} alt={product.name} className="h-32 w-full border-b border-slate-100 bg-slate-50 object-cover" />
+                ) : (
+                  <span className="grid h-32 w-full place-items-center border-b border-emerald-100 bg-emerald-50 text-2xl font-black text-emerald-700">
+                    {product.name.slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+                <div className="flex items-start justify-between gap-3 p-3 pb-2">
+                  <div className="min-w-0">
+                    <p className="line-clamp-2 font-semibold leading-5 text-slate-950">{product.name}</p>
+                    <p className="mt-0.5 truncate text-xs text-slate-500">{product.sku}</p>
+                  </div>
+                  <span className="max-w-24 shrink-0 rounded-full bg-slate-50 px-2 py-1 text-center text-[10px] font-bold leading-tight text-slate-600 ring-1 ring-slate-200">
+                    {formatQuantity(availableQuantity, product.unit)}
+                  </span>
                 </div>
-                <span className="max-w-20 shrink-0 rounded-full bg-slate-50 px-2 py-1 text-center text-[10px] font-bold leading-tight text-slate-600 ring-1 ring-slate-200">
-                  {product.quantity} {product.unit}
-                </span>
-              </div>
-              <div className="mx-3 mb-3 mt-auto flex items-end justify-between gap-3 border-t border-slate-100 pt-2.5">
-                <div className="min-w-0">
-                  <p className="text-lg font-bold text-slate-950">{formatCurrency(product.sellingPrice)}</p>
-                  <p className="mt-1 truncate text-xs text-slate-500">{product.categoryName}</p>
+                <div className="mx-3 mb-3 mt-auto flex items-end justify-between gap-3 border-t border-slate-100 pt-2.5">
+                  <div className="min-w-0">
+                    <p className="text-lg font-bold text-slate-950">{formatCurrency(product.sellingPrice)}</p>
+                    <p className="mt-1 truncate text-xs text-slate-500">{product.categoryName}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className={isUnavailable
+                      ? "grid h-9 w-9 place-items-center rounded-md bg-slate-300 text-lg font-medium text-white"
+                      : "grid h-9 w-9 place-items-center rounded-md bg-slate-900 text-lg font-medium text-white transition group-hover:bg-emerald-700"}
+                    >
+                      +
+                    </span>
+                  </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-900 text-lg font-medium text-white transition group-hover:bg-emerald-700">+</span>
-                </div>
-              </div>
-              <span className="absolute inset-x-0 bottom-0 h-0.5 bg-emerald-500 opacity-0 transition group-hover:opacity-100" />
-            </button>
-          ))}
+                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-emerald-500 opacity-0 transition group-hover:opacity-100" />
+              </button>
+            );
+          })}
           {filteredProducts.length === 0 ? <p className="col-span-full py-10 text-center text-sm text-stone-500">No matching products.</p> : null}
         </div>
       </section>
@@ -418,7 +439,7 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <Input label="Discount" type="number" step="0.01" value={discount} onChange={(event) => setDiscount(Number(event.target.value))} />
-              <Input label="Paid" type="number" step="0.01" value={paidAmount} onChange={(event) => setPaidAmount(Number(event.target.value))} error={errors.paidAmount?.message} />
+              <Input label="Amount" type="number" step="0.01" value={paidAmount} onChange={(event) => setPaidAmount(Number(event.target.value))} error={errors.paidAmount?.message} />
             </div>
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
               <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-950">

@@ -38,6 +38,8 @@ model Product {
   sku               String             @unique
   description       String?
   imageUrl          String?
+  imageData         Bytes?
+  imageMimeType     String?
   purchasePrice     Decimal
   sellingPrice      Decimal
   quantity          Decimal            @default(0)

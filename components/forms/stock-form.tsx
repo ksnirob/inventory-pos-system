@@ -9,7 +9,7 @@ import { createStockTransaction } from "@/actions/inventory";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { Toast } from "@/components/toast";
-import { formatQuantity } from "@/lib/utils";
+import { formatDateInputValue, formatQuantity } from "@/lib/utils";
 import { stockTransactionSchema, type StockTransactionInput } from "@/schemas/inventory";
 
 type ProductOption = { id: string; name: string; sku: string; quantity: number; unit: string };
@@ -27,7 +27,7 @@ export function StockForm({ products }: { products: ProductOption[] }) {
   const [pending, startTransition] = useTransition();
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" }>();
   const [quantityUnit, setQuantityUnit] = useState("unit");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatDateInputValue();
   const {
     control,
     register,
@@ -59,7 +59,7 @@ export function StockForm({ products }: { products: ProductOption[] }) {
     const normalizedQuantity = toStockQuantity(values.quantity, activeQuantityUnit);
 
     Object.entries(values).forEach(([key, value]) => {
-      formData.set(key, value instanceof Date ? value.toISOString().slice(0, 10) : String(value ?? ""));
+      formData.set(key, value instanceof Date ? formatDateInputValue(value) : String(value ?? ""));
     });
     formData.set("quantity", String(normalizedQuantity));
 

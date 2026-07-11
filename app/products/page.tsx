@@ -19,7 +19,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     <ProductCatalog
       categories={categories.map((item) => ({ id: item.id, name: item.name }))}
       products={products.map((product) => ({
-        id: product.id, name: product.name, sku: product.sku, imageUrl: product.imageUrl,
+        id: product.id,
+        name: product.name,
+        sku: product.sku,
+        imageUrl: product.imageMimeType ? `/api/products/${product.id}/image` : product.imageUrl,
         purchasePrice: String(product.purchasePrice), sellingPrice: String(product.sellingPrice),
         quantity: Number(product.quantity), unit: product.unit, minimumStockLevel: Number(product.minimumStockLevel),
         category: { id: product.category.id, name: product.category.name }, supplier: { name: product.supplier.name }
