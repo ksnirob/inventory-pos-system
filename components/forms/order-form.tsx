@@ -8,8 +8,8 @@ import { createOrder } from "@/actions/inventory";
 import { Toast } from "@/components/toast";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
-import { appConfig } from "@/lib/app-config";
 import { formatCurrency, formatDateInputValue, formatQuantity } from "@/lib/utils";
+import type { RuntimeSettings } from "@/lib/settings";
 import type { OrderInput } from "@/schemas/inventory";
 import { paymentMethodLabels, paymentMethods } from "@/types/inventory";
 
@@ -39,7 +39,7 @@ type CustomerOption = {
   address: string | null;
 };
 
-export function OrderForm({ products, customers }: { products: ProductOption[]; customers: CustomerOption[] }) {
+export function OrderForm({ products, customers, settings }: { products: ProductOption[]; customers: CustomerOption[]; settings: RuntimeSettings }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" }>();
@@ -47,7 +47,7 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
   const [category, setCategory] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [discount, setDiscount] = useState(0);
-  const [deliveryArea, setDeliveryArea] = useState<"NONE" | "DHAKA" | "OUTSIDE_DHAKA">("NONE");
+  const [deliveryArea, setDeliveryArea] = useState("NONE");
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
@@ -132,15 +132,9 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
     }, {});
   }, [cart, products]);
 
-  function updateDeliveryArea(nextArea: "NONE" | "DHAKA" | "OUTSIDE_DHAKA") {
+  function updateDeliveryArea(nextArea: string) {
     setDeliveryArea(nextArea);
-    setDeliveryCharge(
-      nextArea === "DHAKA"
-        ? appConfig.deliveryCharges.dhaka
-        : nextArea === "OUTSIDE_DHAKA"
-          ? appConfig.deliveryCharges.outsideDhaka
-          : 0
-    );
+    setDeliveryCharge(settings.deliveryOptions.find((option) => option.id === nextArea)?.amount ?? 0);
   }
 
   function addProduct(productId: string) {
@@ -446,21 +440,17 @@ export function OrderForm({ products, customers }: { products: ProductOption[]; 
                 <MapPin size={16} className="text-[#ff6b4a]" />
                 Delivery charge
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  ["NONE", "None"],
-                  ["DHAKA", "Dhaka"],
-                  ["OUTSIDE_DHAKA", "Outside"]
-                ].map(([value, label]) => (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {[{ id: "NONE", label: "None", amount: 0 }, ...settings.deliveryOptions].map((option) => (
                   <button
-                    key={value}
+                    key={option.id}
                     type="button"
-                    onClick={() => updateDeliveryArea(value as "NONE" | "DHAKA" | "OUTSIDE_DHAKA")}
-                    className={deliveryArea === value
-                      ? "h-10 rounded-md bg-slate-900 px-2 text-xs font-bold text-white shadow-sm"
-                      : "h-10 rounded-md border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-600 hover:border-emerald-300"}
+                    onClick={() => updateDeliveryArea(option.id)}
+                    className={deliveryArea === option.id
+                      ? "min-h-10 rounded-md bg-slate-900 px-2 py-2 text-xs font-bold leading-tight text-white shadow-sm"
+                      : "min-h-10 rounded-md border border-slate-200 bg-white px-2 py-2 text-xs font-semibold leading-tight text-slate-600 hover:border-emerald-300"}
                   >
-                    {label}
+                    {option.label}
                   </button>
                 ))}
               </div>

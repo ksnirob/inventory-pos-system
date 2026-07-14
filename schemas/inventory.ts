@@ -72,7 +72,7 @@ export const orderSchema = z.object({
   status: z.enum(orderStatuses),
   tax: z.coerce.number().min(0, "Tax cannot be negative").default(0),
   discount: z.coerce.number().min(0, "Discount cannot be negative").default(0),
-  deliveryArea: z.enum(["NONE", "DHAKA", "OUTSIDE_DHAKA"]).default("NONE"),
+  deliveryArea: z.string().trim().default("NONE"),
   deliveryCharge: z.coerce.number().min(0, "Delivery charge cannot be negative").default(0),
   costingAmount: z.coerce.number().min(0, "Costing cannot be negative").default(0),
   paymentMethod: z.enum(paymentMethods),
@@ -95,6 +95,24 @@ export const orderStatusSchema = z.object({
   status: z.enum(orderStatuses)
 });
 
+export const businessSettingsSchema = z.object({
+  systemName: requiredText.max(80, "Business name must be 80 characters or fewer"),
+  systemTagline: requiredText.max(120, "Tagline must be 120 characters or fewer"),
+  deliveryOptions: z
+    .array(
+      z.object({
+        id: requiredText.max(80, "Option id is too long"),
+        label: requiredText.max(80, "Label must be 80 characters or fewer"),
+        amount: z.coerce.number().min(0, "Delivery charge cannot be negative")
+      })
+    )
+    .min(1, "Add at least one delivery option"),
+  adminUsername: requiredText.max(60, "Username must be 60 characters or fewer"),
+  adminPassword: z.string().trim().optional(),
+  removeLogo: z.coerce.boolean().optional(),
+  removeFavicon: z.coerce.boolean().optional()
+});
+
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type SupplierInput = z.infer<typeof supplierSchema>;
 export type CustomerInput = z.infer<typeof customerSchema>;
@@ -102,3 +120,4 @@ export type ProductInput = z.infer<typeof productSchema>;
 export type ExpenseInput = z.infer<typeof expenseSchema>;
 export type StockTransactionInput = z.infer<typeof stockTransactionSchema>;
 export type OrderInput = z.infer<typeof orderSchema>;
+export type BusinessSettingsInput = z.infer<typeof businessSettingsSchema>;

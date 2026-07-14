@@ -27,7 +27,7 @@ export default async function OrdersPage() {
     <>
       <PageHeader title="Sales History" description="Review POS sales, payments, and order statuses." action={{ href: "/orders/new", label: "Open POS", icon: <Plus size={16} /> }} />
       <div className="mb-6 grid gap-4 md:grid-cols-3">
-        <StatCard label="Total order value" value={formatCurrency(revenue)} icon={ShoppingCart} />
+        <StatCard label="Total sales" value={formatCurrency(revenue)} icon={ShoppingCart} />
         <StatCard label="Product profit" value={formatCurrency(profit)} icon={TrendingUp} />
         <StatCard label="Delivered charge" value={formatCurrency(deliveryCharge)} icon={Truck} />
       </div>

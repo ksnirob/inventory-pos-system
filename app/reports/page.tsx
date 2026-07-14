@@ -160,7 +160,7 @@ export default async function ReportsPage({
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard label="Delivered orders" value={deliveredCount} icon={PackageCheck} />
         <StatCard label="Product sales" value={formatCurrency(productSales)} icon={Wallet} />
-        <StatCard label="Delivery collected" value={formatCurrency(deliveryCollected)} icon={Truck} />
+        <StatCard label="Delivered charge" value={formatCurrency(deliveryCollected)} icon={Truck} />
         <StatCard label="Product cost" value={formatCurrency(productCost)} icon={Wallet} />
         <StatCard label="Product profit" value={formatCurrency(grossProfit)} icon={TrendingUp} />
         <StatCard label="Net profit" value={formatCurrency(netProfit)} icon={TrendingUp} />

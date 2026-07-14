@@ -2,9 +2,11 @@
 
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { hashPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   categorySchema,
+  businessSettingsSchema,
   customerSchema,
   expenseSchema,
   orderSchema,
@@ -130,6 +132,111 @@ async function readProductImage(formData: FormData) {
     data: Buffer.from(await file.arrayBuffer()),
     mimeType: file.type
   };
+}
+
+function deliveryOptionsInput(formData: FormData) {
+  const ids = formData.getAll("deliveryOptionId").filter((value): value is string => typeof value === "string");
+  const labels = formData.getAll("deliveryOptionLabel").filter((value): value is string => typeof value === "string");
+  const amounts = formData.getAll("deliveryOptionAmount").filter((value): value is string => typeof value === "string");
+
+  return ids.map((id, index) => ({
+    id: id.trim() || `DELIVERY_${index + 1}`,
+    label: labels[index] ?? "",
+    amount: amounts[index] ?? "0"
+  }));
+}
+
+async function readSettingsImage(formData: FormData, key: string, label: string, maxSizeMb = 1) {
+  const file = formData.get(key);
+  if (!(file instanceof File) || file.size === 0) return null;
+
+  const mimeType = file.type || (file.name.toLowerCase().endsWith(".ico") ? "image/x-icon" : "");
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon"];
+  if (!allowedTypes.includes(mimeType)) {
+    throw new Error(`Use a JPG, PNG, WEBP, SVG, or ICO ${label}.`);
+  }
+  if (file.size > maxSizeMb * 1024 * 1024) {
+    throw new Error(`${label} must be ${maxSizeMb}MB or smaller.`);
+  }
+
+  return {
+    data: Buffer.from(await file.arrayBuffer()),
+    mimeType
+  };
+}
+
+export async function saveBusinessSettings(formData: FormData): Promise<ActionState> {
+  let logo: Awaited<ReturnType<typeof readSettingsImage>> = null;
+  let favicon: Awaited<ReturnType<typeof readSettingsImage>> = null;
+  try {
+    logo = await readSettingsImage(formData, "logo", "logo");
+    favicon = await readSettingsImage(formData, "favicon", "favicon");
+  } catch (error) {
+    return mapError(error);
+  }
+
+  const parsed = businessSettingsSchema.safeParse({
+    systemName: formValue(formData, "systemName"),
+    systemTagline: formValue(formData, "systemTagline"),
+    deliveryOptions: deliveryOptionsInput(formData),
+    adminUsername: formValue(formData, "adminUsername"),
+    adminPassword: formValue(formData, "adminPassword"),
+    removeLogo: formData.get("removeLogo") === "on",
+    removeFavicon: formData.get("removeFavicon") === "on"
+  });
+
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: "Please fix the highlighted settings.",
+      fieldErrors: parsed.error.flatten().fieldErrors
+    };
+  }
+
+  try {
+    const deliveryOptionsJson = JSON.stringify(parsed.data.deliveryOptions);
+    const insideDhaka = parsed.data.deliveryOptions.find((option) => option.id === "DHAKA") ?? parsed.data.deliveryOptions[0];
+    const outsideDhaka = parsed.data.deliveryOptions.find((option) => option.id === "OUTSIDE_DHAKA") ?? parsed.data.deliveryOptions[1] ?? insideDhaka;
+
+    await prisma.businessSettings.upsert({
+      where: { id: "default" },
+      create: {
+        id: "default",
+        systemName: parsed.data.systemName,
+        systemTagline: parsed.data.systemTagline,
+        deliveryChargeDhaka: insideDhaka.amount,
+        deliveryChargeOutsideDhaka: outsideDhaka.amount,
+        deliveryOptionsJson,
+        adminUsername: parsed.data.adminUsername,
+        adminPasswordHash: parsed.data.adminPassword ? hashPassword(parsed.data.adminPassword) : undefined,
+        logoData: logo?.data,
+        logoMimeType: logo?.mimeType,
+        faviconData: favicon?.data,
+        faviconMimeType: favicon?.mimeType
+      },
+      update: {
+        systemName: parsed.data.systemName,
+        systemTagline: parsed.data.systemTagline,
+        deliveryChargeDhaka: insideDhaka.amount,
+        deliveryChargeOutsideDhaka: outsideDhaka.amount,
+        deliveryOptionsJson,
+        adminUsername: parsed.data.adminUsername,
+        ...(parsed.data.adminPassword ? { adminPasswordHash: hashPassword(parsed.data.adminPassword) } : {}),
+        ...(logo ? { logoData: logo.data, logoMimeType: logo.mimeType } : {}),
+        ...(parsed.data.removeLogo ? { logoData: null, logoMimeType: null } : {}),
+        ...(favicon ? { faviconData: favicon.data, faviconMimeType: favicon.mimeType } : {}),
+        ...(parsed.data.removeFavicon ? { faviconData: null, faviconMimeType: null } : {})
+      }
+    });
+
+    revalidatePath("/", "layout");
+    revalidatePath("/settings");
+    revalidatePath("/orders/new");
+    revalidatePath("/orders");
+    return { ok: true, message: "Settings saved." };
+  } catch (error) {
+    return mapError(error);
+  }
 }
 
 export async function saveCategory(id: string | undefined, formData: FormData): Promise<ActionState> {

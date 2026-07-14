@@ -1,15 +1,17 @@
 import { OrderForm } from "@/components/forms/order-form";
 import { PageHeader } from "@/components/page-header";
 import { prisma } from "@/lib/prisma";
+import { getBusinessSettings } from "@/lib/settings";
 
 export default async function NewOrderPage() {
-  const [products, customers] = await Promise.all([
+  const [products, customers, settings] = await Promise.all([
     prisma.product.findMany({
       where: { quantity: { gt: 0 } },
       include: { category: true },
       orderBy: { name: "asc" }
     }),
-    prisma.customer.findMany({ orderBy: { updatedAt: "desc" }, take: 100 })
+    prisma.customer.findMany({ orderBy: { updatedAt: "desc" }, take: 100 }),
+    getBusinessSettings()
   ]);
 
   return (
@@ -34,6 +36,7 @@ export default async function NewOrderPage() {
           phone: customer.phone,
           address: customer.address
         }))}
+        settings={settings}
       />
     </>
   );

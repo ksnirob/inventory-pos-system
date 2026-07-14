@@ -12,15 +12,17 @@ import {
   Menu,
   Package,
   ReceiptText,
+  Settings,
   ShoppingCart,
   Truck,
   UsersRound,
   X
 } from "lucide-react";
 import { useState } from "react";
-import { appConfig } from "@/lib/app-config";
 import { cn } from "@/lib/utils";
+import { LogoutButton } from "@/components/logout-button";
 import { QuickActions } from "@/components/quick-actions";
+import type { RuntimeSettings } from "@/lib/settings";
 
 const navigation = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -32,7 +34,8 @@ const navigation = [
   { href: "/suppliers", label: "Suppliers", icon: Truck },
   { href: "/stock", label: "Stock", icon: Boxes },
   { href: "/expenses", label: "Expenses", icon: ReceiptText },
-  { href: "/reports", label: "Reports", icon: BarChart3 }
+  { href: "/reports", label: "Reports", icon: BarChart3 },
+  { href: "/settings", label: "Settings", icon: Settings }
 ];
 
 const titles: Record<string, string> = {
@@ -45,13 +48,18 @@ const titles: Record<string, string> = {
   "/suppliers": "Suppliers",
   "/stock": "Stock management",
   "/expenses": "Expenses",
-  "/reports": "Business reports"
+  "/reports": "Business reports",
+  "/settings": "Settings"
 };
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, settings }: { children: React.ReactNode; settings: RuntimeSettings }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const pageTitle = titles[pathname] ?? (pathname.startsWith("/orders/") ? "Sale details" : "Inventory workspace");
+
+  if (pathname === "/login") {
+    return <>{children}</>;
+  }
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -63,14 +71,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const sidebar = (
     <aside className="flex h-full w-[260px] flex-col border-r border-slate-200 bg-white text-slate-950">
       <div className="flex h-[76px] items-center justify-between border-b border-slate-100 px-5">
-        <Link href="/" className="flex min-w-0 items-center gap-3" onClick={() => setOpen(false)}>
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#ff6b4a] text-white shadow-lg shadow-orange-200">
-            <ShoppingCart size={19} strokeWidth={2.4} />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-base font-bold tracking-tight">{appConfig.systemName}</span>
-            <span className="block text-[11px] font-medium text-slate-400">{appConfig.systemTagline}</span>
-          </span>
+        <Link href="/" className={cn("flex min-w-0", settings.logoUrl ? "flex-col items-start gap-1" : "items-center gap-3")} onClick={() => setOpen(false)}>
+          {settings.logoUrl ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={settings.logoUrl} alt={settings.systemName} className="max-h-9 max-w-[150px] shrink-0 object-contain" />
+              <span className="min-w-0 max-w-[190px]">
+                <span className="block truncate text-[11px] font-medium text-slate-400">{settings.systemTagline}</span>
+              </span>
+            </>
+          ) : (
+            <span className="min-w-0">
+              <span className="block truncate text-base font-bold tracking-tight">{settings.systemName}</span>
+              <span className="block truncate text-[11px] font-medium text-slate-400">{settings.systemTagline}</span>
+            </span>
+          )}
         </Link>
         <button className="rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-950 lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu">
           <X size={20} />
@@ -102,7 +117,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
       </div>
 
-      <div className="mx-4 mt-auto mb-4 border-t border-slate-100 pt-4" />
     </aside>
   );
 
@@ -124,10 +138,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
             <div className="min-w-0">
               <p className="truncate text-base font-bold text-slate-950">{pageTitle}</p>
-              <p className="hidden text-xs text-slate-500 sm:block">{appConfig.systemName} / {pageTitle}</p>
+              <p className="hidden text-xs text-slate-500 sm:block">{settings.systemName} / {pageTitle}</p>
             </div>
           </div>
-          <QuickActions />
+          <div className="flex items-center gap-2">
+            <QuickActions />
+            <div className="hidden sm:block">
+              <LogoutButton compact />
+            </div>
+          </div>
         </header>
         <main className="mx-auto max-w-[1540px] p-4 sm:p-6 lg:p-8">{children}</main>
         <footer className="border-t border-slate-200 bg-white px-4 py-5 text-center text-xs text-slate-400 sm:px-6 lg:px-8">

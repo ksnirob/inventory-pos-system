@@ -60,6 +60,23 @@ model Product {
   @@index([quantity])
 }
 
+model BusinessSettings {
+  id                          String   @id @default("default")
+  systemName                  String   @default("HashtagPlants")
+  systemTagline               String   @default("Retail operations")
+  deliveryChargeDhaka         Decimal  @default(60)
+  deliveryChargeOutsideDhaka  Decimal  @default(120)
+  deliveryOptionsJson         String?
+  logoData                    Bytes?
+  logoMimeType                String?
+  faviconData                 Bytes?
+  faviconMimeType             String?
+  adminUsername               String   @default("admin")
+  adminPasswordHash           String   @default("240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9")
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+}
+
 model Expense {
   id            String   @id @default(cuid())
   title         String

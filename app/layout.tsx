@@ -1,18 +1,27 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/app-shell";
-import { appConfig } from "@/lib/app-config";
+import { getBusinessSettings } from "@/lib/settings";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: `${appConfig.systemName} | POS & Inventory`,
-  description: "Modern point of sale, inventory, expense, and reporting workspace"
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getBusinessSettings();
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return {
+    title: `${settings.systemName} | POS & Inventory`,
+    description: "Modern point of sale, inventory, expense, and reporting workspace",
+    icons: {
+      icon: settings.faviconUrl ?? "/api/settings/favicon"
+    }
+  };
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const settings = await getBusinessSettings();
+
   return (
     <html lang="en">
       <body>
-        <AppShell>{children}</AppShell>
+        <AppShell settings={settings}>{children}</AppShell>
       </body>
     </html>
   );
