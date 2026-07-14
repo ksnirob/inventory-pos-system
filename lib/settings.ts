@@ -50,7 +50,31 @@ function parseDeliveryOptions(value: string | null, dhaka: number, outsideDhaka:
   }
 }
 
+function getDefaultBusinessSettings(): RuntimeSettings {
+  const dhaka = appConfig.deliveryCharges.dhaka;
+  const outsideDhaka = appConfig.deliveryCharges.outsideDhaka;
+
+  return {
+    systemName: appConfig.systemName,
+    systemTagline: appConfig.systemTagline,
+    adminUsername: "admin",
+    deliveryCharges: {
+      dhaka,
+      outsideDhaka
+    },
+    deliveryOptions: defaultDeliveryOptions(dhaka, outsideDhaka),
+    logoUrl: null,
+    hasLogo: false,
+    faviconUrl: null,
+    hasFavicon: false
+  };
+}
+
 export async function getBusinessSettings(): Promise<RuntimeSettings> {
+  if (!process.env.DATABASE_URL) {
+    return getDefaultBusinessSettings();
+  }
+
   const settings = await prisma.businessSettings.upsert({
     where: { id: "default" },
     update: {},
