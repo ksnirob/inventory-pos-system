@@ -12,7 +12,7 @@ import { formatDateInputValue } from "@/lib/utils";
 import { expenseSchema, type ExpenseInput } from "@/schemas/inventory";
 import { paymentMethodLabels, paymentMethods } from "@/types/inventory";
 
-const defaultExpenseCategories = ["Packaging", "Delivery", "Salary", "Rent", "Utility", "Marketing", "General"];
+const defaultExpenseCategories = ["Packaging", "Marketing", "General"];
 
 export function ExpenseForm({ categories = [], onSaved }: { categories?: string[]; onSaved?: () => void }) {
   const router = useRouter();
@@ -30,7 +30,7 @@ export function ExpenseForm({ categories = [], onSaved }: { categories?: string[
     resolver: zodResolver(expenseSchema),
     defaultValues: {
       title: "",
-      category: "General",
+      category: "",
       amount: 0,
       paymentMethod: "CASH",
       expenseDate: new Date(today),
