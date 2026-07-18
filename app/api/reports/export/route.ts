@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getStockStatus } from "@/lib/utils";
+import { formatQuantity, getStockStatus } from "@/lib/utils";
 import { stockTransactionTypes, type StockTransactionType } from "@/types/inventory";
 
 function csvCell(value: string | number) {
@@ -103,7 +103,7 @@ export async function GET(request: Request) {
       product.sku,
       product.category.name,
       product.supplier.name,
-      Number(product.quantity),
+      formatQuantity(Number(product.quantity), product.unit),
       getStockStatus(Number(product.quantity), Number(product.minimumStockLevel)),
       Number(product.purchasePrice) * Number(product.quantity),
       Number(product.sellingPrice) * Number(product.quantity),
@@ -117,9 +117,9 @@ export async function GET(request: Request) {
       "Stock Transactions",
       transaction.product.name,
       transaction.type,
-      Number(transaction.quantity),
-      Number(transaction.previousQuantity),
-      Number(transaction.newQuantity),
+      formatQuantity(Number(transaction.quantity), transaction.product.unit),
+      formatQuantity(Number(transaction.previousQuantity), transaction.product.unit),
+      formatQuantity(Number(transaction.newQuantity), transaction.product.unit),
       transaction.referenceNumber || "",
       transaction.transactionDate.toISOString().slice(0, 10)
     ])

@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { saveExpense } from "@/actions/inventory";
 import { Toast } from "@/components/toast";
@@ -39,7 +39,15 @@ export function ExpenseForm({
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" }>();
   const [newCategory, setNewCategory] = useState("");
   const today = formatDateInputValue();
-  const categoryOptions = Array.from(new Set([...defaultExpenseCategories, ...categories])).sort();
+  const categoryOptions = Array.from(new Set([...defaultExpenseCategories, ...categories, expense?.category].filter(Boolean) as string[])).sort();
+  const defaultValues = {
+    title: expense?.title ?? "",
+    category: expense?.category ?? "General",
+    amount: expense ? Number(expense.amount) : 0,
+    paymentMethod: expense?.paymentMethod ?? "CASH",
+    expenseDate: (expense?.expenseDate ?? today) as unknown as Date,
+    note: expense?.note ?? ""
+  };
   const {
     register,
     handleSubmit,
@@ -49,16 +57,14 @@ export function ExpenseForm({
     formState: { errors }
   } = useForm<ExpenseInput>({
     resolver: zodResolver(expenseSchema),
-    defaultValues: {
-      title: expense?.title ?? "",
-      category: expense?.category ?? "General",
-      amount: expense ? Number(expense.amount) : 0,
-      paymentMethod: expense?.paymentMethod ?? "CASH",
-      expenseDate: new Date(expense?.expenseDate ?? today),
-      note: expense?.note ?? ""
-    }
+    defaultValues
   });
   const selectedCategory = useWatch({ control, name: "category" });
+
+  useEffect(() => {
+    reset(defaultValues);
+    setNewCategory("");
+  }, [expense?.id]);
 
   function onSubmit(values: ExpenseInput) {
     const category = values.category === newCategoryValue ? newCategory.trim() : values.category;
@@ -119,7 +125,7 @@ export function ExpenseForm({
             <option key={method} value={method}>{paymentMethodLabels[method]}</option>
           ))}
         </Select>
-        <Input label="Expense date" type="date" defaultValue={today} {...register("expenseDate")} error={errors.expenseDate?.message} />
+        <Input label="Expense date" type="date" {...register("expenseDate")} error={errors.expenseDate?.message} />
       </div>
       <Textarea label="Note" {...register("note")} error={errors.note?.message} />
       <div className="flex justify-end">

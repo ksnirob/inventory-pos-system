@@ -5,7 +5,7 @@ import { StatCard } from "@/components/stat-card";
 import { StockBadge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, formatQuantity } from "@/lib/utils";
 import { stockTransactionTypes, type StockTransactionType } from "@/types/inventory";
 
 function startOfDay(date: Date) {
@@ -166,8 +166,7 @@ export default async function ReportsPage({
         <StatCard label="Net profit" value={formatCurrency(netProfit)} icon={TrendingUp} />
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">
-        <StatCard label="Inventory items" value={reportProducts.length} icon={PackageCheck} />
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <StatCard label="Stock alerts" value={stockAlerts} icon={PackageCheck} />
         <StatCard label="Stock potential profit" value={formatCurrency(stockPotentialProfit)} icon={TrendingUp} />
       </div>
@@ -195,7 +194,7 @@ export default async function ReportsPage({
                   <td className="px-4 py-3 font-medium text-slate-900">{product.name}</td>
                   <td className="px-4 py-3 text-slate-600">{product.category.name}</td>
                   <td className="px-4 py-3 text-slate-600">{product.supplier.name}</td>
-                  <td className="px-4 py-3 text-slate-600">{Number(product.quantity)}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatQuantity(Number(product.quantity), product.unit)}</td>
                   <td className="px-4 py-3">
                     <StockBadge quantity={Number(product.quantity)} minimumStockLevel={Number(product.minimumStockLevel)} />
                   </td>
@@ -229,9 +228,9 @@ export default async function ReportsPage({
                 <tr key={transaction.id}>
                   <td className="px-4 py-3 font-medium text-slate-900">{transaction.product.name}</td>
                   <td className="px-4 py-3 text-slate-600">{transaction.type.replace("_", " ")}</td>
-                  <td className="px-4 py-3 text-slate-600">{Number(transaction.quantity)}</td>
-                  <td className="px-4 py-3 text-slate-600">{Number(transaction.previousQuantity)}</td>
-                  <td className="px-4 py-3 text-slate-600">{Number(transaction.newQuantity)}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatQuantity(Number(transaction.quantity), transaction.product.unit)}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatQuantity(Number(transaction.previousQuantity), transaction.product.unit)}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatQuantity(Number(transaction.newQuantity), transaction.product.unit)}</td>
                   <td className="px-4 py-3 text-slate-600">{formatDate(transaction.transactionDate)}</td>
                 </tr>
               ))}
