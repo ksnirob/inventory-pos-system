@@ -75,17 +75,26 @@ export async function getBusinessSettings(): Promise<RuntimeSettings> {
     return getDefaultBusinessSettings();
   }
 
-  const settings = await prisma.businessSettings.upsert({
-    where: { id: "default" },
-    update: {},
-    create: {
-      id: "default",
-      systemName: appConfig.systemName,
-      systemTagline: appConfig.systemTagline,
-      deliveryChargeDhaka: appConfig.deliveryCharges.dhaka,
-      deliveryChargeOutsideDhaka: appConfig.deliveryCharges.outsideDhaka
-    }
-  });
+  const settings = await prisma.businessSettings
+    .upsert({
+      where: { id: "default" },
+      update: {},
+      create: {
+        id: "default",
+        systemName: appConfig.systemName,
+        systemTagline: appConfig.systemTagline,
+        deliveryChargeDhaka: appConfig.deliveryCharges.dhaka,
+        deliveryChargeOutsideDhaka: appConfig.deliveryCharges.outsideDhaka
+      }
+    })
+    .catch((error) => {
+      console.error("Failed to load business settings", error);
+      return null;
+    });
+
+  if (!settings) {
+    return getDefaultBusinessSettings();
+  }
 
   const dhaka = Number(settings.deliveryChargeDhaka);
   const outsideDhaka = Number(settings.deliveryChargeOutsideDhaka);

@@ -14,15 +14,24 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
   const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
-  const settings = await prisma.businessSettings.upsert({
-    where: { id: "default" },
-    update: {},
-    create: {
-      id: "default",
-      adminUsername: "admin",
-      adminPasswordHash: defaultPasswordHash
-    }
-  });
+  const settings = await prisma.businessSettings
+    .upsert({
+      where: { id: "default" },
+      update: {},
+      create: {
+        id: "default",
+        adminUsername: "admin",
+        adminPasswordHash: defaultPasswordHash
+      }
+    })
+    .catch((error) => {
+      console.error("Failed to load login settings", error);
+      return null;
+    });
+
+  if (!settings) {
+    return { ok: false, message: "Database is not ready yet. Please check Vercel DATABASE_URL and run Prisma migrations." };
+  }
 
   if (username !== settings.adminUsername || hashPassword(password) !== settings.adminPasswordHash) {
     return { ok: false, message: "Invalid username or password." };
