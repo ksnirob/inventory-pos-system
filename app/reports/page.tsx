@@ -144,7 +144,7 @@ export default async function ReportsPage({
   return (
     <>
       <PageHeader title="Reports" description="Inventory value, stock alerts, and transaction history." />
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-5 flex flex-wrap items-center justify-end gap-3">
         <FilterBar
           search={query}
           product={productId}
@@ -170,12 +170,12 @@ export default async function ReportsPage({
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard label="Product sales" value={formatCurrency(productSales)} icon={Wallet} tooltip="Delivered order subtotals minus order discounts. Delivery charge is not included." />
+        <StatCard label="Product sales" value={formatCurrency(productSales)} icon={Wallet} tooltip="Delivered product total - discount" />
         <StatCard label="Delivered charge" value={formatCurrency(deliveryCollected)} icon={Truck} />
-        <StatCard label="Product cost" value={formatCurrency(productCost)} icon={Wallet} tooltip="For delivered orders: sold quantity multiplied by purchase price per product quantity." />
-        <StatCard label="Product profit" value={formatCurrency(grossProfit)} icon={TrendingUp} />
-        <StatCard label="Net profit" value={formatCurrency(netProfit)} icon={TrendingUp} tooltip="Product profit minus expenses in the selected date range." />
-        <StatCard label="Stock potential profit" value={formatCurrency(stockPotentialProfit)} icon={TrendingUp} tooltip="Current stock selling value minus current stock purchase value." />
+        <StatCard label="Product cost" value={formatCurrency(productCost)} icon={Wallet} tooltip="Sold quantity x purchase price" />
+        <StatCard label="Product profit" value={formatCurrency(grossProfit)} icon={TrendingUp} tooltip="Product sales - product cost" />
+        <StatCard label="Net profit" value={formatCurrency(netProfit)} icon={TrendingUp} tooltip="Product profit - expense" />
+        <StatCard label="Stock potential profit" value={formatCurrency(stockPotentialProfit)} icon={TrendingUp} tooltip="Stock selling value - stock cost" />
       </div>
 
       <section className="mt-6 overflow-hidden rounded-md border border-slate-200 bg-white">

@@ -11,7 +11,7 @@ const palettes = [
 export function StatCard({ label, value, icon: Icon, tooltip }: { label: string; value: string | number; icon: LucideIcon; tooltip?: string }) {
   const palette = palettes[label.length % palettes.length];
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/[0.03] transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg">
+    <div className="group relative rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/[0.03] transition hover:z-20 hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
@@ -19,7 +19,7 @@ export function StatCard({ label, value, icon: Icon, tooltip }: { label: string;
             {tooltip ? (
               <span className="relative inline-flex">
                 <HelpCircle tabIndex={0} className="peer cursor-help text-slate-400 outline-none transition hover:text-slate-700 focus:text-slate-700" size={14} aria-label={`${label} calculation`} />
-                <span className="pointer-events-none absolute left-1/2 top-6 z-20 hidden w-64 -translate-x-1/2 rounded-md border border-slate-200 bg-slate-950 px-3 py-2 text-xs font-medium leading-5 text-white shadow-xl peer-hover:block peer-focus:block">
+                <span className="pointer-events-none absolute left-0 top-6 z-30 hidden w-56 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold leading-5 text-slate-700 shadow-xl shadow-slate-900/10 ring-1 ring-slate-900/5 peer-hover:block peer-focus:block">
                   {tooltip}
                 </span>
               </span>

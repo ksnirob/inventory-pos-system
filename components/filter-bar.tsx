@@ -76,7 +76,7 @@ export function FilterBar({
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
-          className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:bg-slate-50 hover:text-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-100"
           aria-expanded={open}
         >
           <Filter size={17} />
@@ -100,7 +100,7 @@ export function FilterBar({
       </div>
 
       {open ? (
-      <div className="absolute left-0 top-14 z-30 grid w-[min(1500px,calc(100vw-3rem))] gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-xl shadow-slate-900/10 lg:grid-cols-[minmax(220px,1fr)_repeat(6,minmax(140px,200px))]">
+      <div className="absolute right-0 top-12 z-30 grid w-[min(1500px,calc(100vw-3rem))] gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-xl shadow-slate-900/10 lg:grid-cols-[minmax(220px,1fr)_repeat(6,minmax(140px,200px))]">
         <label className="relative">
           <span className="sr-only">Search</span>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600" size={17} />
