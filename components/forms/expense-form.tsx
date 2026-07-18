@@ -102,7 +102,7 @@ export function ExpenseForm({
         <Select label="Category" defaultValue={expense?.category ?? "General"} {...register("category")} error={errors.category?.message}>
           <option value="">Select category</option>
           {categoryOptions.map((category) => (
-            <option key={category} value={category} />
+            <option key={category} value={category}>{category}</option>
           ))}
           <option value={newCategoryValue}>Add new category</option>
         </Select>

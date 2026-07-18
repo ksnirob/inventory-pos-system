@@ -8,11 +8,13 @@ import { prisma } from "@/lib/prisma";
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
   const modal = typeof params.modal === "string" ? params.modal : "";
+  const editId = typeof params.edit === "string" ? params.edit : "";
   const [categories, suppliers, products] = await Promise.all([
     prisma.category.findMany({ orderBy: { name: "asc" } }),
     prisma.supplier.findMany({ orderBy: { name: "asc" } }),
     prisma.product.findMany({ include: { category: true, supplier: true }, orderBy: { name: "asc" } })
   ]);
+  const editProduct = editId ? products.find((product) => product.id === editId) : null;
 
   return <>
     <PageHeader title="Products" description="Search, filter, sort, and manage all inventory items." action={{ href: "/products?modal=product", label: "Add product", icon: <Plus size={16} /> }} />
@@ -28,6 +30,35 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         category: { id: product.category.id, name: product.category.name }, supplier: { name: product.supplier.name }
       }))}
     />
-    {modal === "product" ? <ModalShell title="Add product" description="Create a product with image, stock, and pricing details." closeHref="/products"><ProductForm categories={categories} suppliers={suppliers} embedded /></ModalShell> : null}
+    {(modal === "product" || editProduct) ? (
+      <ModalShell
+        title={editProduct ? "Edit product" : "Add product"}
+        description={editProduct ? "Update product details, pricing, and stock thresholds." : "Create a product with image, stock, and pricing details."}
+        closeHref="/products"
+      >
+        <ProductForm
+          key={editProduct?.id ?? "new"}
+          categories={categories}
+          suppliers={suppliers}
+          embedded
+          product={editProduct ? {
+            id: editProduct.id,
+            name: editProduct.name,
+            sku: editProduct.sku,
+            description: editProduct.description ?? "",
+            imageUrl: editProduct.imageUrl ?? "",
+            previewImageUrl: editProduct.imageMimeType ? `/api/products/${editProduct.id}/image` : editProduct.imageUrl,
+            categoryId: editProduct.categoryId,
+            supplierId: editProduct.supplierId,
+            purchasePrice: Number(editProduct.purchasePrice),
+            sellingPrice: Number(editProduct.sellingPrice),
+            baseQuantity: Number(editProduct.baseQuantity),
+            currentQuantity: Number(editProduct.quantity),
+            minimumStockLevel: Number(editProduct.minimumStockLevel),
+            unit: editProduct.unit
+          } : undefined}
+        />
+      </ModalShell>
+    ) : null}
   </>;
 }

@@ -71,8 +71,8 @@ export function FilterBar({
   }, [currentParams, pathname, query, router]);
 
   return (
-    <div className="mb-5 rounded-xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/[0.03]">
-      <div className="flex items-center justify-between gap-3">
+    <div className="relative">
+      <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
@@ -100,7 +100,7 @@ export function FilterBar({
       </div>
 
       {open ? (
-      <div className="mt-3 grid gap-2 lg:grid-cols-[minmax(220px,1fr)_repeat(6,minmax(140px,200px))]">
+      <div className="absolute left-0 top-14 z-30 grid w-[min(1500px,calc(100vw-3rem))] gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-xl shadow-slate-900/10 lg:grid-cols-[minmax(220px,1fr)_repeat(6,minmax(140px,200px))]">
         <label className="relative">
           <span className="sr-only">Search</span>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600" size={17} />

@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
@@ -104,17 +105,36 @@ export function ProductForm({
         </Select>
         <Input label="Purchase price" type="number" step="0.01" {...register("purchasePrice")} error={errors.purchasePrice?.message} />
         <Input label="Selling price" type="number" step="0.01" {...register("sellingPrice")} error={errors.sellingPrice?.message} />
-        <Input label="Quantity" type="number" step="0.001" {...register("baseQuantity")} error={errors.baseQuantity?.message} />
+        <label className="grid gap-1.5 text-[13px] font-semibold text-slate-700">
+          Quantity
+          <span className="grid gap-2 sm:grid-cols-[1fr_150px]">
+            <input
+              type="number"
+              step="0.001"
+              className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+              {...register("baseQuantity")}
+            />
+            <span className="relative">
+              <select
+                aria-label="Unit"
+                className="h-11 w-full appearance-none rounded-md border border-slate-200 bg-white pl-3 pr-10 text-sm text-slate-950 outline-none transition hover:border-slate-300 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                {...register("unit")}
+              >
+                <option value="piece">Piece</option>
+                <option value="box">Box</option>
+                <option value="kg">Kilogram</option>
+                <option value="litre">Litre</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-900" size={18} />
+            </span>
+          </span>
+          {errors.baseQuantity?.message ? <span className="text-xs font-medium text-rose-600">{errors.baseQuantity.message}</span> : null}
+          {errors.unit?.message ? <span className="text-xs font-medium text-rose-600">{errors.unit.message}</span> : null}
+        </label>
+        <Input label="Minimum stock level" type="number" step="0.001" {...register("minimumStockLevel")} error={errors.minimumStockLevel?.message} />
         {product ? (
           <Input label="Current quantity" type="number" value={product.currentQuantity ?? 0} disabled readOnly />
         ) : null}
-        <Input label="Minimum stock level" type="number" step="0.001" {...register("minimumStockLevel")} error={errors.minimumStockLevel?.message} />
-        <Select label="Unit" {...register("unit")} error={errors.unit?.message}>
-          <option value="piece">Piece</option>
-          <option value="box">Box</option>
-          <option value="kg">Kilogram</option>
-          <option value="litre">Litre</option>
-        </Select>
       </div>
       <Textarea label="Description" {...register("description")} error={errors.description?.message} />
       <div className="flex flex-wrap justify-end gap-3">

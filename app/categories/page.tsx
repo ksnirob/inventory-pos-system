@@ -17,10 +17,12 @@ export default async function CategoriesPage({
 }) {
   const resolvedSearchParams = await searchParams;
   const modal = typeof resolvedSearchParams.modal === "string" ? resolvedSearchParams.modal : "";
+  const editId = typeof resolvedSearchParams.edit === "string" ? resolvedSearchParams.edit : "";
   const categories = await prisma.category.findMany({
     include: { _count: { select: { products: true } } },
     orderBy: { name: "asc" }
   });
+  const editCategory = editId ? categories.find((category) => category.id === editId) : null;
 
   return (
     <>
@@ -49,7 +51,7 @@ export default async function CategoriesPage({
                     <td className="px-4 py-3 text-slate-600">{formatDate(category.updatedAt)}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
-                        <LinkButton href={`/categories/${category.id}/edit`} variant="secondary" className="h-9 px-3">
+                        <LinkButton href={`/categories?edit=${category.id}`} variant="secondary" className="h-9 px-3">
                           <Pencil size={15} />
                           Edit
                         </LinkButton>
@@ -66,9 +68,21 @@ export default async function CategoriesPage({
           </div>
         </div>
       )}
-      {modal === "category" ? (
-        <ModalShell title="Add category" description="Create a category for related inventory items." closeHref="/categories">
-          <CategoryForm embedded />
+      {modal === "category" || editCategory ? (
+        <ModalShell
+          title={editCategory ? "Edit category" : "Add category"}
+          description={editCategory ? "Update this inventory category." : "Create a category for related inventory items."}
+          closeHref="/categories"
+        >
+          <CategoryForm
+            key={editCategory?.id ?? "new"}
+            embedded
+            category={editCategory ? {
+              id: editCategory.id,
+              name: editCategory.name,
+              description: editCategory.description ?? ""
+            } : undefined}
+          />
         </ModalShell>
       ) : null}
     </>

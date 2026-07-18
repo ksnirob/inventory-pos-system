@@ -144,19 +144,19 @@ export default async function ReportsPage({
   return (
     <>
       <PageHeader title="Reports" description="Inventory value, stock alerts, and transaction history." />
-      <FilterBar
-        search={query}
-        product={productId}
-        type={type}
-        from={from}
-        to={to}
-        period={period}
-        sort={sort}
-        products={products.map((product) => ({ value: product.id, label: product.name }))}
-        showTransactionType
-        resetHref="/reports"
-      />
-      <div className="mb-5 flex justify-end">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <FilterBar
+          search={query}
+          product={productId}
+          type={type}
+          from={from}
+          to={to}
+          period={period}
+          sort={sort}
+          products={products.map((product) => ({ value: product.id, label: product.name }))}
+          showTransactionType
+          resetHref="/reports"
+        />
         <LinkButton href={`/api/reports/export?${exportParams.toString()}`} variant="secondary">
           <Download size={16} />
           Export CSV
@@ -175,9 +175,6 @@ export default async function ReportsPage({
         <StatCard label="Product cost" value={formatCurrency(productCost)} icon={Wallet} tooltip="For delivered orders: sold quantity multiplied by purchase price per product quantity." />
         <StatCard label="Product profit" value={formatCurrency(grossProfit)} icon={TrendingUp} />
         <StatCard label="Net profit" value={formatCurrency(netProfit)} icon={TrendingUp} tooltip="Product profit minus expenses in the selected date range." />
-      </div>
-
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <StatCard label="Stock potential profit" value={formatCurrency(stockPotentialProfit)} icon={TrendingUp} tooltip="Current stock selling value minus current stock purchase value." />
       </div>
 
