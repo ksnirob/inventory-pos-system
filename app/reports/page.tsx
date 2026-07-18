@@ -144,7 +144,7 @@ export default async function ReportsPage({
   return (
     <>
       <PageHeader title="Reports" description="Inventory value, stock alerts, and transaction history." />
-      <div className="mb-5 flex flex-wrap items-center justify-end gap-3">
+      <div className="relative z-40 mb-5 flex flex-wrap items-center justify-end gap-3">
         <FilterBar
           search={query}
           product={productId}
@@ -163,13 +163,13 @@ export default async function ReportsPage({
         </LinkButton>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="relative z-0 grid gap-4 sm:grid-cols-3">
         <StatCard label="Total products" value={reportProducts.length} icon={PackageCheck} />
         <StatCard label="Delivered orders" value={deliveredCount} icon={PackageCheck} />
         <StatCard label="Stock warning" value={stockAlerts} icon={AlertTriangle} />
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="relative z-0 mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard label="Product sales" value={formatCurrency(productSales)} icon={Wallet} tooltip="Delivered product total - discount" />
         <StatCard label="Delivered charge" value={formatCurrency(deliveryCollected)} icon={Truck} />
         <StatCard label="Product cost" value={formatCurrency(productCost)} icon={Wallet} tooltip="Sold quantity x purchase price" />
