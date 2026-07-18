@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Filter, Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -38,6 +38,8 @@ export function FilterBar({
   const pathname = usePathname();
   const currentParams = useSearchParams();
   const [query, setQuery] = useState(search ?? "");
+  const [open, setOpen] = useState(false);
+  const activeFilterCount = [search, category, status, product, type, from, to, period].filter(Boolean).length;
 
   function updateFilter(key: string, value: string, extra: Record<string, string> = {}) {
     const params = new URLSearchParams(currentParams.toString());
@@ -70,7 +72,35 @@ export function FilterBar({
 
   return (
     <div className="mb-5 rounded-xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/[0.03]">
-      <div className="grid gap-2 lg:grid-cols-[minmax(220px,1fr)_repeat(6,minmax(140px,200px))]">
+      <div className="flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => setOpen((current) => !current)}
+          className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+          aria-expanded={open}
+        >
+          <Filter size={17} />
+          Filters
+          {activeFilterCount ? (
+            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-emerald-700 px-1.5 text-[11px] font-bold text-white">
+              {activeFilterCount}
+            </span>
+          ) : null}
+        </button>
+        {activeFilterCount ? (
+          <button
+            type="button"
+            onClick={() => router.replace(pathname, { scroll: false })}
+            className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+          >
+            <X size={15} />
+            Clear
+          </button>
+        ) : null}
+      </div>
+
+      {open ? (
+      <div className="mt-3 grid gap-2 lg:grid-cols-[minmax(220px,1fr)_repeat(6,minmax(140px,200px))]">
         <label className="relative">
           <span className="sr-only">Search</span>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600" size={17} />
@@ -131,6 +161,7 @@ export function FilterBar({
           <input type="date" name="to" defaultValue={to} onChange={(event) => updateFilter("to", event.target.value, { period: "custom" })} className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" aria-label="To date" />
         </> : null}
       </div>
+      ) : null}
     </div>
   );
 }

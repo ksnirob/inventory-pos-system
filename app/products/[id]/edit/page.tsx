@@ -33,7 +33,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           supplierId: product.supplierId,
           purchasePrice: Number(product.purchasePrice),
           sellingPrice: Number(product.sellingPrice),
-          quantity: Number(product.quantity),
+          baseQuantity: Number(product.baseQuantity),
+          currentQuantity: Number(product.quantity),
           minimumStockLevel: Number(product.minimumStockLevel),
           unit: product.unit
         }}

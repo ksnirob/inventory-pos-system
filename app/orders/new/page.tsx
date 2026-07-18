@@ -24,6 +24,7 @@ export default async function NewOrderPage() {
           sku: product.sku,
           imageUrl: product.imageMimeType ? `/api/products/${product.id}/image` : product.imageUrl,
           quantity: Number(product.quantity),
+          baseQuantity: Number(product.baseQuantity),
           sellingPrice: String(product.sellingPrice),
           purchasePrice: String(product.purchasePrice),
           categoryName: product.category.name,

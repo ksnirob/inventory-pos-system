@@ -42,6 +42,7 @@ model Product {
   imageMimeType     String?
   purchasePrice     Decimal
   sellingPrice      Decimal
+  baseQuantity      Decimal            @default(1)
   quantity          Decimal            @default(0)
   minimumStockLevel Decimal            @default(0)
   unit              String

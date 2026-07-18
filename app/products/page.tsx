@@ -24,7 +24,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         sku: product.sku,
         imageUrl: product.imageMimeType ? `/api/products/${product.id}/image` : product.imageUrl,
         purchasePrice: String(product.purchasePrice), sellingPrice: String(product.sellingPrice),
-        quantity: Number(product.quantity), unit: product.unit, minimumStockLevel: Number(product.minimumStockLevel),
+        baseQuantity: Number(product.baseQuantity), quantity: Number(product.quantity), unit: product.unit, minimumStockLevel: Number(product.minimumStockLevel),
         category: { id: product.category.id, name: product.category.name }, supplier: { name: product.supplier.name }
       }))}
     />

@@ -9,7 +9,7 @@ import { createStockTransaction } from "@/actions/inventory";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { Toast } from "@/components/toast";
-import { formatDateInputValue, formatQuantity } from "@/lib/utils";
+import { cn, formatDateInputValue, formatQuantity } from "@/lib/utils";
 import { stockTransactionSchema, type StockTransactionInput } from "@/schemas/inventory";
 
 type ProductOption = { id: string; name: string; sku: string; quantity: number; unit: string };
@@ -22,7 +22,7 @@ function toStockQuantity(quantity: number, inputUnit: string) {
   return inputUnit === "gm" ? quantity / 1000 : quantity;
 }
 
-export function StockForm({ products }: { products: ProductOption[] }) {
+export function StockForm({ products, embedded = false, closeHref }: { products: ProductOption[]; embedded?: boolean; closeHref?: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" }>();
@@ -82,13 +82,16 @@ export function StockForm({ products }: { products: ProductOption[] }) {
           note: "",
           transactionDate: new Date(today)
         });
+        if (closeHref) {
+          router.push(closeHref);
+        }
         router.refresh();
       }
     });
   }
 
   return (
-    <form data-stock-form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 rounded-md border border-stone-200 bg-white p-5 shadow-sm">
+    <form data-stock-form onSubmit={handleSubmit(onSubmit)} className={cn("grid gap-4", embedded ? "" : "rounded-md border border-stone-200 bg-white p-5 shadow-sm")}>
       <div className="grid gap-4 lg:grid-cols-3">
         <Select label="Product" {...register("productId")} error={errors.productId?.message}>
           <option value="">Select product</option>

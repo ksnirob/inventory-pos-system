@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { saveExpense } from "@/actions/inventory";
 import { Toast } from "@/components/toast";
@@ -61,11 +61,6 @@ export function ExpenseForm({
   });
   const selectedCategory = useWatch({ control, name: "category" });
 
-  useEffect(() => {
-    reset(defaultValues);
-    setNewCategory("");
-  }, [expense?.id]);
-
   function onSubmit(values: ExpenseInput) {
     const category = values.category === newCategoryValue ? newCategory.trim() : values.category;
     if (!category) {
@@ -104,7 +99,7 @@ export function ExpenseForm({
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Expense title" {...register("title")} error={errors.title?.message} />
-        <Select label="Category" {...register("category")} error={errors.category?.message}>
+        <Select label="Category" defaultValue={expense?.category ?? "General"} {...register("category")} error={errors.category?.message}>
           <option value="">Select category</option>
           {categoryOptions.map((category) => (
             <option key={category} value={category} />

@@ -42,6 +42,12 @@ function dateRange(period: string | null, from: string | null, to: string | null
   };
 }
 
+function unitValue(totalValue: unknown, baseQuantity: unknown) {
+  const quantity = Number(baseQuantity);
+  if (quantity <= 0) return Number(totalValue);
+  return Number(totalValue) / quantity;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q") || "";
@@ -96,18 +102,19 @@ export async function GET(request: Request) {
   ]);
 
   const inventoryRows = [
-    ["Report", "Product", "SKU", "Category", "Supplier", "Quantity", "Status", "Purchase Value", "Selling Value", "Potential Profit"],
+    ["Report", "Product", "SKU", "Category", "Supplier", "Quantity", "Current Quantity", "Status", "Purchase Value", "Selling Value", "Potential Profit"],
     ...products.map((product) => [
       "Current Inventory",
       product.name,
       product.sku,
       product.category.name,
       product.supplier.name,
+      formatQuantity(Number(product.baseQuantity), product.unit),
       formatQuantity(Number(product.quantity), product.unit),
       getStockStatus(Number(product.quantity), Number(product.minimumStockLevel)),
-      Number(product.purchasePrice) * Number(product.quantity),
-      Number(product.sellingPrice) * Number(product.quantity),
-      (Number(product.sellingPrice) - Number(product.purchasePrice)) * Number(product.quantity)
+      unitValue(product.purchasePrice, product.baseQuantity) * Number(product.quantity),
+      unitValue(product.sellingPrice, product.baseQuantity) * Number(product.quantity),
+      (unitValue(product.sellingPrice, product.baseQuantity) - unitValue(product.purchasePrice, product.baseQuantity)) * Number(product.quantity)
     ])
   ];
 

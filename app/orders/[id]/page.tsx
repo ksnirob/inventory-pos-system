@@ -193,7 +193,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                       <span className="text-right font-bold">{formatCurrency(String(item.lineTotal))}</span>
                     </div>
                     <div className="mt-1 flex justify-between gap-3 text-[11px] text-stone-600">
-                      <span>{saleQuantity} x {formatCurrency(String(item.unitPrice))}</span>
+                      <span>{saleQuantity}</span>
                       <span>{item.product.sku}</span>
                     </div>
                   </div>

@@ -1,4 +1,4 @@
-import { Download, PackageCheck, TrendingUp, Truck, Wallet } from "lucide-react";
+import { AlertTriangle, Download, PackageCheck, TrendingUp, Truck, Wallet } from "lucide-react";
 import { FilterBar } from "@/components/filter-bar";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
@@ -41,6 +41,12 @@ function dateRange(period: string, from: string, to: string) {
     gte: from ? startOfDay(new Date(from)) : undefined,
     lt: to ? addDays(startOfDay(new Date(to)), 1) : undefined
   };
+}
+
+function unitValue(totalValue: unknown, baseQuantity: unknown) {
+  const quantity = Number(baseQuantity);
+  if (quantity <= 0) return Number(totalValue);
+  return Number(totalValue) / quantity;
 }
 
 export default async function ReportsPage({
@@ -116,13 +122,13 @@ export default async function ReportsPage({
   const productSales = deliveredOrders.reduce((total, order) => total + Number(order.subtotal) - Number(order.discount), 0);
   const deliveryCollected = deliveredOrders.reduce((total, order) => total + Number(order.deliveryCharge), 0);
   const productCost = deliveredOrders.reduce((total, order) => {
-    return total + order.items.reduce((sum, item) => sum + Number(item.quantity) * Number(item.product.purchasePrice), 0);
+    return total + order.items.reduce((sum, item) => sum + Number(item.quantity) * unitValue(item.product.purchasePrice, item.product.baseQuantity), 0);
   }, 0);
   const grossProfit = productSales - productCost;
   const totalExpenses = expenses.reduce((total, expense) => total + Number(expense.amount), 0);
   const netProfit = grossProfit - totalExpenses;
-  const inventoryCost = reportProducts.reduce((total, product) => total + Number(product.purchasePrice) * Number(product.quantity), 0);
-  const inventorySellingValue = reportProducts.reduce((total, product) => total + Number(product.sellingPrice) * Number(product.quantity), 0);
+  const inventoryCost = reportProducts.reduce((total, product) => total + unitValue(product.purchasePrice, product.baseQuantity) * Number(product.quantity), 0);
+  const inventorySellingValue = reportProducts.reduce((total, product) => total + unitValue(product.sellingPrice, product.baseQuantity) * Number(product.quantity), 0);
   const stockPotentialProfit = inventorySellingValue - inventoryCost;
   const deliveredCount = deliveredOrders.length;
   const stockAlerts = lowStock.length + reportProducts.filter((product) => Number(product.quantity) <= 0).length;
@@ -157,18 +163,22 @@ export default async function ReportsPage({
         </LinkButton>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="Total products" value={reportProducts.length} icon={PackageCheck} />
         <StatCard label="Delivered orders" value={deliveredCount} icon={PackageCheck} />
-        <StatCard label="Product sales" value={formatCurrency(productSales)} icon={Wallet} />
+        <StatCard label="Stock warning" value={stockAlerts} icon={AlertTriangle} />
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <StatCard label="Product sales" value={formatCurrency(productSales)} icon={Wallet} tooltip="Delivered order subtotals minus order discounts. Delivery charge is not included." />
         <StatCard label="Delivered charge" value={formatCurrency(deliveryCollected)} icon={Truck} />
-        <StatCard label="Product cost" value={formatCurrency(productCost)} icon={Wallet} />
+        <StatCard label="Product cost" value={formatCurrency(productCost)} icon={Wallet} tooltip="For delivered orders: sold quantity multiplied by purchase price per product quantity." />
         <StatCard label="Product profit" value={formatCurrency(grossProfit)} icon={TrendingUp} />
-        <StatCard label="Net profit" value={formatCurrency(netProfit)} icon={TrendingUp} />
+        <StatCard label="Net profit" value={formatCurrency(netProfit)} icon={TrendingUp} tooltip="Product profit minus expenses in the selected date range." />
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <StatCard label="Stock alerts" value={stockAlerts} icon={PackageCheck} />
-        <StatCard label="Stock potential profit" value={formatCurrency(stockPotentialProfit)} icon={TrendingUp} />
+        <StatCard label="Stock potential profit" value={formatCurrency(stockPotentialProfit)} icon={TrendingUp} tooltip="Current stock selling value minus current stock purchase value." />
       </div>
 
       <section className="mt-6 overflow-hidden rounded-md border border-slate-200 bg-white">
@@ -183,6 +193,7 @@ export default async function ReportsPage({
                 <th className="px-4 py-3">Category</th>
                 <th className="px-4 py-3">Supplier</th>
                 <th className="px-4 py-3">Quantity</th>
+                <th className="px-4 py-3">Current quantity</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Purchase value</th>
                 <th className="px-4 py-3">Selling value</th>
@@ -194,12 +205,13 @@ export default async function ReportsPage({
                   <td className="px-4 py-3 font-medium text-slate-900">{product.name}</td>
                   <td className="px-4 py-3 text-slate-600">{product.category.name}</td>
                   <td className="px-4 py-3 text-slate-600">{product.supplier.name}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatQuantity(Number(product.baseQuantity), product.unit)}</td>
                   <td className="px-4 py-3 text-slate-600">{formatQuantity(Number(product.quantity), product.unit)}</td>
                   <td className="px-4 py-3">
                     <StockBadge quantity={Number(product.quantity)} minimumStockLevel={Number(product.minimumStockLevel)} />
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{formatCurrency(Number(product.purchasePrice) * Number(product.quantity))}</td>
-                  <td className="px-4 py-3 text-slate-600">{formatCurrency(Number(product.sellingPrice) * Number(product.quantity))}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatCurrency(unitValue(product.purchasePrice, product.baseQuantity) * Number(product.quantity))}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatCurrency(unitValue(product.sellingPrice, product.baseQuantity) * Number(product.quantity))}</td>
                 </tr>
               ))}
             </tbody>

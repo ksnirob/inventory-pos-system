@@ -1,9 +1,17 @@
+import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { StockForm } from "@/components/forms/stock-form";
+import { ModalShell } from "@/components/modal-shell";
 import { prisma } from "@/lib/prisma";
 import { formatDate, formatQuantity } from "@/lib/utils";
 
-export default async function StockPage() {
+export default async function StockPage({
+  searchParams
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  const modal = typeof resolvedSearchParams.modal === "string" ? resolvedSearchParams.modal : "";
   const [products, transactions] = await Promise.all([
     prisma.product.findMany({ orderBy: { name: "asc" } }),
     prisma.stockTransaction.findMany({
@@ -15,15 +23,10 @@ export default async function StockPage() {
 
   return (
     <>
-      <PageHeader title="Stock Management" description="Record stock in, stock out, and adjustment transactions." />
-      <StockForm
-        products={products.map((product) => ({
-          id: product.id,
-          name: product.name,
-          sku: product.sku,
-          quantity: Number(product.quantity),
-          unit: product.unit
-        }))}
+      <PageHeader
+        title="Stock Management"
+        description="Record stock in, stock out, and adjustment transactions."
+        action={{ href: "/stock?modal=stock", label: "Record stock", icon: <Plus size={16} /> }}
       />
       <section className="mt-6 overflow-hidden rounded-md border border-slate-200 bg-white">
         <div className="border-b border-slate-200 px-5 py-4">
@@ -58,6 +61,21 @@ export default async function StockPage() {
           </table>
         </div>
       </section>
+      {modal === "stock" ? (
+        <ModalShell title="Record stock" description="Add stock in, stock out, or stock adjustment." closeHref="/stock">
+          <StockForm
+            embedded
+            closeHref="/stock"
+            products={products.map((product) => ({
+              id: product.id,
+              name: product.name,
+              sku: product.sku,
+              quantity: Number(product.quantity),
+              unit: product.unit
+            }))}
+          />
+        </ModalShell>
+      ) : null}
     </>
   );
 }

@@ -41,7 +41,7 @@ export const productSchema = z.object({
   supplierId: requiredText,
   purchasePrice: z.coerce.number().min(0, "Purchase price cannot be negative"),
   sellingPrice: z.coerce.number().min(0, "Selling price cannot be negative"),
-  quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
+  baseQuantity: z.coerce.number().positive("Quantity must be greater than 0"),
   minimumStockLevel: z.coerce.number().min(0, "Minimum stock cannot be negative"),
   unit: requiredText.max(30, "Unit must be 30 characters or fewer")
 });

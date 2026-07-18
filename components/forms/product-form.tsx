@@ -19,7 +19,7 @@ export function ProductForm({
   suppliers,
   embedded = false
 }: {
-  product?: ProductInput & { id: string; previewImageUrl?: string | null };
+  product?: ProductInput & { id: string; previewImageUrl?: string | null; currentQuantity?: number };
   categories: Option[];
   suppliers: Option[];
   embedded?: boolean;
@@ -44,7 +44,7 @@ export function ProductForm({
       supplierId: "",
       purchasePrice: 0,
       sellingPrice: 0,
-      quantity: 0,
+      baseQuantity: 1,
       minimumStockLevel: 0,
       unit: "piece"
     }
@@ -104,7 +104,10 @@ export function ProductForm({
         </Select>
         <Input label="Purchase price" type="number" step="0.01" {...register("purchasePrice")} error={errors.purchasePrice?.message} />
         <Input label="Selling price" type="number" step="0.01" {...register("sellingPrice")} error={errors.sellingPrice?.message} />
-        <Input label="Current quantity" type="number" step="0.001" {...register("quantity")} error={errors.quantity?.message} />
+        <Input label="Quantity" type="number" step="0.001" {...register("baseQuantity")} error={errors.baseQuantity?.message} />
+        {product ? (
+          <Input label="Current quantity" type="number" value={product.currentQuantity ?? 0} disabled readOnly />
+        ) : null}
         <Input label="Minimum stock level" type="number" step="0.001" {...register("minimumStockLevel")} error={errors.minimumStockLevel?.message} />
         <Select label="Unit" {...register("unit")} error={errors.unit?.message}>
           <option value="piece">Piece</option>

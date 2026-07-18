@@ -19,6 +19,7 @@ type ProductOption = {
   sku: string;
   imageUrl: string | null;
   quantity: number;
+  baseQuantity: number;
   sellingPrice: string;
   purchasePrice: string;
   categoryName: string;
@@ -499,8 +500,8 @@ export function OrderForm({ products, customers, settings }: { products: Product
     if (!product) return 0;
     const sellingPrice = Number(product.sellingPrice);
 
-    if (isKgProduct(product) && product.quantity > 0 && product.quantity < 1) {
-      return sellingPrice / product.quantity;
+    if (product.baseQuantity > 0) {
+      return sellingPrice / product.baseQuantity;
     }
 
     return sellingPrice;

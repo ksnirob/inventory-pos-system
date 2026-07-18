@@ -44,7 +44,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               ["Supplier", product.supplier.name],
               ["Purchase price", formatCurrency(String(product.purchasePrice))],
               ["Selling price", formatCurrency(String(product.sellingPrice))],
-              ["Quantity", formatQuantity(String(product.quantity), product.unit)],
+              ["Quantity", formatQuantity(String(product.baseQuantity), product.unit)],
+              ["Current quantity", formatQuantity(String(product.quantity), product.unit)],
               ["Minimum stock level", String(product.minimumStockLevel)],
               ["Created", formatDate(product.createdAt)],
               ["Updated", formatDate(product.updatedAt)]

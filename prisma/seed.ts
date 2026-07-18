@@ -60,6 +60,7 @@ async function main() {
           description: `${name} maintained in local inventory.`,
           purchasePrice,
           sellingPrice,
+          baseQuantity: quantity,
           quantity,
           minimumStockLevel,
           unit,

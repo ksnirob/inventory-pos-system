@@ -54,7 +54,7 @@ function productInput(formData: FormData) {
     supplierId: formValue(formData, "supplierId"),
     purchasePrice: formValue(formData, "purchasePrice"),
     sellingPrice: formValue(formData, "sellingPrice"),
-    quantity: formValue(formData, "quantity"),
+    baseQuantity: formValue(formData, "baseQuantity"),
     minimumStockLevel: formValue(formData, "minimumStockLevel"),
     unit: formValue(formData, "unit")
   };
@@ -115,17 +115,12 @@ function createOrderNumber() {
   return `ORD-${stamp}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 }
 
-function isKgUnit(unit: string) {
-  const normalizedUnit = unit.toLowerCase();
-  return normalizedUnit === "kg" || normalizedUnit === "kilogram" || normalizedUnit === "kilograms";
-}
-
-function getSaleUnitPrice(product: { sellingPrice: unknown; quantity: unknown; unit: string }) {
+function getSaleUnitPrice(product: { sellingPrice: unknown; baseQuantity: unknown }) {
   const sellingPrice = Number(product.sellingPrice);
-  const quantity = Number(product.quantity);
+  const baseQuantity = Number(product.baseQuantity);
 
-  if (isKgUnit(product.unit) && quantity > 0 && quantity < 1) {
-    return sellingPrice / quantity;
+  if (baseQuantity > 0) {
+    return sellingPrice / baseQuantity;
   }
 
   return sellingPrice;
@@ -430,7 +425,7 @@ export async function saveProduct(id: string | undefined, formData: FormData): P
     if (id) {
       await prisma.product.update({ where: { id }, data: productData });
     } else {
-      await prisma.product.create({ data: productData });
+      await prisma.product.create({ data: { ...productData, quantity: productData.baseQuantity } });
     }
 
     revalidatePath("/products");

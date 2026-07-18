@@ -7,7 +7,7 @@ import { DeleteButton } from "@/components/delete-button";
 import { EmptyState } from "@/components/empty-state";
 import { StockBadge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
-import { formatCurrency, getStockStatus } from "@/lib/utils";
+import { formatCurrency, formatQuantity, getStockStatus } from "@/lib/utils";
 
 type ProductItem = {
   id: string;
@@ -16,6 +16,7 @@ type ProductItem = {
   imageUrl: string | null;
   purchasePrice: string;
   sellingPrice: string;
+  baseQuantity: number;
   quantity: number;
   unit: string;
   minimumStockLevel: number;
@@ -23,7 +24,7 @@ type ProductItem = {
   supplier: { name: string };
 };
 
-type SortKey = "name" | "sku" | "category" | "supplier" | "purchasePrice" | "sellingPrice" | "quantity";
+type SortKey = "name" | "sku" | "category" | "supplier" | "purchasePrice" | "sellingPrice" | "baseQuantity" | "quantity";
 const pageSize = 10;
 
 export function ProductCatalog({ products, categories }: { products: ProductItem[]; categories: { id: string; name: string }[] }) {
@@ -90,7 +91,7 @@ export function ProductCatalog({ products, categories }: { products: ProductItem
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left text-sm">
             <thead className="bg-slate-100 text-xs uppercase text-slate-600"><tr>
-              {([ ["name", "Product name"], ["sku", "SKU"], ["category", "Category"], ["supplier", "Supplier"], ["purchasePrice", "Purchase price"], ["sellingPrice", "Selling price"], ["quantity", "Quantity"] ] as [SortKey, string][]).map(([key, label]) => (
+              {([ ["name", "Product name"], ["sku", "SKU"], ["category", "Category"], ["supplier", "Supplier"], ["purchasePrice", "Purchase price"], ["sellingPrice", "Selling price"], ["baseQuantity", "Quantity"], ["quantity", "Current quantity"] ] as [SortKey, string][]).map(([key, label]) => (
                 <th key={key} className="px-4 py-3 font-semibold"><button type="button" onClick={() => updateSort(key)} className="inline-flex items-center gap-1 hover:text-emerald-700">{label}<ArrowDownUp size={13} /></button></th>
               ))}
               <th className="px-4 py-3">Stock status</th><th className="px-4 py-3 text-right">Actions</th>
@@ -102,7 +103,7 @@ export function ProductCatalog({ products, categories }: { products: ProductItem
                   <img src={product.imageUrl} alt={product.name} className="h-10 w-10 rounded-md object-cover" />
                 ) : <span className="grid h-10 w-10 place-items-center rounded-md bg-emerald-50 text-xs font-black text-emerald-700">{product.name.slice(0, 2).toUpperCase()}</span>}<span className="font-semibold text-slate-950">{product.name}</span></div></td>
                 <td className="px-4 py-3 text-slate-600">{product.sku}</td><td className="px-4 py-3 text-slate-600">{product.category.name}</td><td className="px-4 py-3 text-slate-600">{product.supplier.name}</td>
-                <td className="px-4 py-3 text-slate-600">{formatCurrency(product.purchasePrice)}</td><td className="px-4 py-3 text-slate-600">{formatCurrency(product.sellingPrice)}</td><td className="px-4 py-3 font-medium text-slate-700">{product.quantity} <span className="text-xs text-slate-500">{product.unit}</span></td>
+                <td className="px-4 py-3 text-slate-600">{formatCurrency(product.purchasePrice)}</td><td className="px-4 py-3 text-slate-600">{formatCurrency(product.sellingPrice)}</td><td className="px-4 py-3 font-medium text-slate-700">{formatQuantity(product.baseQuantity, product.unit)}</td><td className="px-4 py-3 font-medium text-slate-700">{formatQuantity(product.quantity, product.unit)}</td>
                 <td className="px-4 py-3"><StockBadge quantity={product.quantity} minimumStockLevel={product.minimumStockLevel} /></td>
                 <td className="px-4 py-3"><div className="flex justify-end gap-2"><LinkButton href={`/products/${product.id}`} variant="secondary" className="h-9 px-3" title="View"><Eye size={15} /></LinkButton><LinkButton href={`/products/${product.id}/edit`} variant="secondary" className="h-9 px-3" title="Edit"><Pencil size={15} /></LinkButton><DeleteButton action={deleteProduct.bind(null, product.id)} label="" confirmMessage="Delete this product and its stock history?" /></div></td>
               </tr>
