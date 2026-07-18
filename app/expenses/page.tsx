@@ -1,12 +1,12 @@
-import { Plus, ReceiptText, TrendingDown, Wallet } from "lucide-react";
+import { Pencil, Plus, ReceiptText, TrendingDown, Wallet } from "lucide-react";
 import { deleteExpense } from "@/actions/inventory";
 import { DeleteButton } from "@/components/delete-button";
 import { ExpenseForm } from "@/components/forms/expense-form";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
-import { Button } from "@/components/ui/button";
+import { Button, LinkButton } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateInputValue } from "@/lib/utils";
 
 export default async function ExpensesPage({
   searchParams
@@ -17,22 +17,26 @@ export default async function ExpensesPage({
   const category = typeof resolvedSearchParams.category === "string" ? resolvedSearchParams.category : "";
   const from = typeof resolvedSearchParams.from === "string" ? resolvedSearchParams.from : "";
   const to = typeof resolvedSearchParams.to === "string" ? resolvedSearchParams.to : "";
+  const editId = typeof resolvedSearchParams.edit === "string" ? resolvedSearchParams.edit : "";
 
-  const expenses = await prisma.expense.findMany({
-    where: {
-      category: category || undefined,
-      expenseDate: {
-        gte: from ? new Date(from) : undefined,
-        lte: to ? new Date(to) : undefined
-      }
-    },
-    orderBy: { expenseDate: "desc" }
-  });
-  const expenseCategories = await prisma.expense.findMany({
-    distinct: ["category"],
-    select: { category: true },
-    orderBy: { category: "asc" }
-  });
+  const [expenses, expenseCategories, editExpense] = await Promise.all([
+    prisma.expense.findMany({
+      where: {
+        category: category || undefined,
+        expenseDate: {
+          gte: from ? new Date(from) : undefined,
+          lte: to ? new Date(to) : undefined
+        }
+      },
+      orderBy: { expenseDate: "desc" }
+    }),
+    prisma.expense.findMany({
+      distinct: ["category"],
+      select: { category: true },
+      orderBy: { category: "asc" }
+    }),
+    editId ? prisma.expense.findUnique({ where: { id: editId } }) : null
+  ]);
 
   const categories = expenseCategories.map((expense) => expense.category);
   const totalExpense = expenses.reduce((total, expense) => total + Number(expense.amount), 0);
@@ -45,10 +49,26 @@ export default async function ExpensesPage({
       <PageHeader title="Expenses" description="Track business costs separately from POS sales." />
       <section className="mb-6 rounded-md border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/[0.03]">
         <div className="mb-4 flex items-center gap-2">
-          <Plus size={18} className="text-[#ff6b4a]" />
-          <h2 className="font-bold text-stone-950">Add expense</h2>
+          {editExpense ? <Pencil size={18} className="text-[#ff6b4a]" /> : <Plus size={18} className="text-[#ff6b4a]" />}
+          <h2 className="font-bold text-stone-950">{editExpense ? "Edit expense" : "Add expense"}</h2>
+          {editExpense ? (
+            <LinkButton href="/expenses" variant="secondary" className="ml-auto h-9 px-3">
+              Cancel edit
+            </LinkButton>
+          ) : null}
         </div>
-        <ExpenseForm categories={categories} />
+        <ExpenseForm
+          categories={categories}
+          expense={editExpense ? {
+            id: editExpense.id,
+            title: editExpense.title,
+            category: editExpense.category,
+            amount: String(editExpense.amount),
+            paymentMethod: editExpense.paymentMethod as "CASH" | "CARD" | "MOBILE_BANKING" | "BANK_TRANSFER",
+            expenseDate: formatDateInputValue(editExpense.expenseDate),
+            note: editExpense.note ?? ""
+          } : undefined}
+        />
       </section>
 
       <form className="mb-5 grid gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_160px_160px_auto]">
@@ -92,7 +112,12 @@ export default async function ExpensesPage({
                   <td className="px-4 py-3 font-bold text-red-600">{formatCurrency(String(expense.amount))}</td>
                   <td className="px-4 py-3 text-stone-600">{formatDate(expense.expenseDate)}</td>
                   <td className="px-4 py-3 text-right">
-                    <DeleteButton action={deleteExpense.bind(null, expense.id)} label="" confirmMessage="Delete this expense?" />
+                    <div className="flex justify-end gap-2">
+                      <LinkButton href={`/expenses?edit=${expense.id}`} variant="secondary" className="h-9 px-3">
+                        Edit
+                      </LinkButton>
+                      <DeleteButton action={deleteExpense.bind(null, expense.id)} label="" confirmMessage="Delete this expense?" />
+                    </div>
                   </td>
                 </tr>
               ))}

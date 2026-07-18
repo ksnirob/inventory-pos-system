@@ -152,10 +152,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </div>
           <div className="pos-slip w-[320px] rounded-sm border border-stone-300 bg-white px-4 py-5 font-mono text-[12px] leading-tight text-stone-950 shadow-sm print:mx-auto print:w-[80mm] print:border-0 print:p-0 print:shadow-none">
             <div className="text-center">
-              {settings.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={settings.logoUrl} alt={settings.systemName} className="mx-auto mb-2 max-h-14 max-w-36 object-contain" />
-              ) : null}
               <p className="text-[18px] font-black uppercase tracking-wide">{settings.systemName} POS</p>
               <p className="mt-1 text-[11px] uppercase">{settings.systemTagline}</p>
               <p className="text-[11px]">Sales Payslip</p>
