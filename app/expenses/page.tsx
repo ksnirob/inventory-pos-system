@@ -28,8 +28,13 @@ export default async function ExpensesPage({
     },
     orderBy: { expenseDate: "desc" }
   });
+  const expenseCategories = await prisma.expense.findMany({
+    distinct: ["category"],
+    select: { category: true },
+    orderBy: { category: "asc" }
+  });
 
-  const categories = Array.from(new Set(expenses.map((expense) => expense.category))).sort();
+  const categories = expenseCategories.map((expense) => expense.category);
   const totalExpense = expenses.reduce((total, expense) => total + Number(expense.amount), 0);
   const todayExpense = expenses
     .filter((expense) => expense.expenseDate.toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10))
@@ -43,7 +48,7 @@ export default async function ExpensesPage({
           <Plus size={18} className="text-[#ff6b4a]" />
           <h2 className="font-bold text-stone-950">Add expense</h2>
         </div>
-        <ExpenseForm />
+        <ExpenseForm categories={categories} />
       </section>
 
       <form className="mb-5 grid gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_160px_160px_auto]">

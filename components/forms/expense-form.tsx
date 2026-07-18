@@ -12,11 +12,14 @@ import { formatDateInputValue } from "@/lib/utils";
 import { expenseSchema, type ExpenseInput } from "@/schemas/inventory";
 import { paymentMethodLabels, paymentMethods } from "@/types/inventory";
 
-export function ExpenseForm({ onSaved }: { onSaved?: () => void }) {
+const defaultExpenseCategories = ["Packaging", "Delivery", "Salary", "Rent", "Utility", "Marketing", "General"];
+
+export function ExpenseForm({ categories = [], onSaved }: { categories?: string[]; onSaved?: () => void }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" }>();
   const today = formatDateInputValue();
+  const categoryOptions = Array.from(new Set([...defaultExpenseCategories, ...categories])).sort();
   const {
     register,
     handleSubmit,
@@ -63,13 +66,9 @@ export function ExpenseForm({ onSaved }: { onSaved?: () => void }) {
         <Input label="Expense title" {...register("title")} error={errors.title?.message} />
         <Input label="Category" list="expense-categories" {...register("category")} error={errors.category?.message} />
         <datalist id="expense-categories">
-          <option value="Packaging" />
-          <option value="Delivery" />
-          <option value="Salary" />
-          <option value="Rent" />
-          <option value="Utility" />
-          <option value="Marketing" />
-          <option value="General" />
+          {categoryOptions.map((category) => (
+            <option key={category} value={category} />
+          ))}
         </datalist>
         <Input label="Amount" type="number" step="0.01" {...register("amount")} error={errors.amount?.message} />
         <Select label="Payment method" {...register("paymentMethod")} error={errors.paymentMethod?.message}>
