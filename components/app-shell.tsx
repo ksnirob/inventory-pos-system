@@ -93,7 +93,7 @@ export function AppShell({ children, settings }: { children: React.ReactNode; se
       </div>
 
       <div className="px-3 pt-5">
-        <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Workspace</p>
+        {/* <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Workspace</p> */}
         <nav className="grid gap-1">
           {navigation.map((item) => {
             const Icon = item.icon;
