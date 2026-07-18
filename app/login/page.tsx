@@ -16,7 +16,7 @@ export default async function LoginPage() {
           <p className="mt-1 text-sm text-slate-500">{settings.systemTagline}</p>
         </div>
         <LoginForm />
-        <p className="mt-4 text-center text-xs text-slate-400">Default login: admin / admin123</p>
+        {/* <p className="mt-4 text-center text-xs text-slate-400">Default login: admin / admin123</p> */}
       </section>
     </main>
   );
