@@ -115,6 +115,22 @@ function createOrderNumber() {
   return `ORD-${stamp}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 }
 
+function isKgUnit(unit: string) {
+  const normalizedUnit = unit.toLowerCase();
+  return normalizedUnit === "kg" || normalizedUnit === "kilogram" || normalizedUnit === "kilograms";
+}
+
+function getSaleUnitPrice(product: { sellingPrice: unknown; quantity: unknown; unit: string }) {
+  const sellingPrice = Number(product.sellingPrice);
+  const quantity = Number(product.quantity);
+
+  if (isKgUnit(product.unit) && quantity > 0 && quantity < 1) {
+    return sellingPrice / quantity;
+  }
+
+  return sellingPrice;
+}
+
 async function readProductImage(formData: FormData) {
   const file = formData.get("image");
   if (!(file instanceof File) || file.size === 0) return null;
@@ -586,7 +602,7 @@ export async function createOrder(formData: FormData): Promise<ActionState> {
           throw new Error(`${product.name} only has ${currentQuantity} ${product.unit} available.`);
         }
 
-        const unitPrice = Number(product.sellingPrice);
+        const unitPrice = getSaleUnitPrice(product);
         const lineTotal = unitPrice * item.quantity;
         subtotal += lineTotal;
 

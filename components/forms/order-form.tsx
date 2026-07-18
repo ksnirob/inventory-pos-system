@@ -108,7 +108,7 @@ export function OrderForm({ products, customers, settings }: { products: Product
   const cartDetails = useMemo(() => {
     const lines = cart.map((line) => {
       const product = products.find((item) => item.id === line.productId);
-      const unitPrice = product ? Number(product.sellingPrice) : 0;
+      const unitPrice = getSaleUnitPrice(product);
       const stockQuantity = toStockQuantity(line, product);
       return {
         ...line,
@@ -493,6 +493,17 @@ export function OrderForm({ products, customers, settings }: { products: Product
   function formatSaleQuantity(line: CartLine, product?: ProductOption) {
     if (!product) return "";
     return `${line.enteredQuantity} ${line.enteredUnit || product.unit}`;
+  }
+
+  function getSaleUnitPrice(product?: ProductOption) {
+    if (!product) return 0;
+    const sellingPrice = Number(product.sellingPrice);
+
+    if (isKgProduct(product) && product.quantity > 0 && product.quantity < 1) {
+      return sellingPrice / product.quantity;
+    }
+
+    return sellingPrice;
   }
 
   function getInitialCartQuantity(product: ProductOption): Pick<CartLine, "enteredQuantity" | "enteredUnit"> {
