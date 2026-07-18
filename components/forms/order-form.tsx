@@ -143,7 +143,9 @@ export function OrderForm({ products, customers, settings }: { products: Product
 
     setCart((current) => {
       const existing = current.find((line) => line.productId === productId);
-      if (!existing) return [...current, { productId, enteredQuantity: 1, enteredUnit: product.unit }];
+      if (!existing) {
+        return [...current, { productId, ...getInitialCartQuantity(product) }];
+      }
       const nextStockQuantity = toStockQuantity(
         { ...existing, enteredQuantity: existing.enteredQuantity + 1 },
         product
@@ -186,9 +188,10 @@ export function OrderForm({ products, customers, settings }: { products: Product
     setCart((current) =>
       current.map((line) => {
         if (line.productId !== productId) return line;
-        const stockQuantity = toStockQuantity({ ...line, enteredUnit }, product);
+        const nextLine = convertCartUnit(line, product, enteredUnit);
+        const stockQuantity = toStockQuantity(nextLine, product);
         if (stockQuantity > (product?.quantity ?? 0)) return line;
-        return { ...line, enteredUnit };
+        return nextLine;
       })
     );
   }
@@ -490,4 +493,28 @@ export function OrderForm({ products, customers, settings }: { products: Product
   function formatSaleQuantity(line: CartLine, product?: ProductOption) {
     if (!product) return "";
     return `${line.enteredQuantity} ${line.enteredUnit || product.unit}`;
+  }
+
+  function getInitialCartQuantity(product: ProductOption): Pick<CartLine, "enteredQuantity" | "enteredUnit"> {
+    if (isKgProduct(product) && product.quantity < 1) {
+      return { enteredQuantity: product.quantity * 1000, enteredUnit: "gm" };
+    }
+
+    return { enteredQuantity: 1, enteredUnit: isKgProduct(product) ? "kg" : product.unit };
+  }
+
+  function convertCartUnit(line: CartLine, product: ProductOption | undefined, enteredUnit: string): CartLine {
+    if (!isKgProduct(product)) {
+      return { ...line, enteredUnit };
+    }
+
+    if (line.enteredUnit === "kg" && enteredUnit === "gm") {
+      return { ...line, enteredQuantity: line.enteredQuantity * 1000, enteredUnit };
+    }
+
+    if (line.enteredUnit === "gm" && enteredUnit === "kg") {
+      return { ...line, enteredQuantity: line.enteredQuantity / 1000, enteredUnit };
+    }
+
+    return { ...line, enteredUnit };
   }
