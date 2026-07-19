@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/page-header";
 import { StockForm } from "@/components/forms/stock-form";
 import { ModalShell } from "@/components/modal-shell";
 import { prisma } from "@/lib/prisma";
-import { formatDate, formatQuantity } from "@/lib/utils";
+import { formatDate, formatQuantity, formatStockTransactionType } from "@/lib/utils";
 
 export default async function StockPage({
   searchParams
@@ -49,7 +49,7 @@ export default async function StockPage({
               {transactions.map((transaction) => (
                 <tr key={transaction.id}>
                   <td className="px-4 py-3 font-medium text-slate-900">{transaction.product.name}</td>
-                  <td className="px-4 py-3 text-slate-600">{transaction.type.replace("_", " ")}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatStockTransactionType(transaction.type, transaction.note, transaction.referenceNumber)}</td>
                   <td className="px-4 py-3 text-slate-600">{formatQuantity(Number(transaction.quantity), transaction.product.unit)}</td>
                   <td className="px-4 py-3 text-slate-600">{formatQuantity(Number(transaction.previousQuantity), transaction.product.unit)}</td>
                   <td className="px-4 py-3 text-slate-600">{formatQuantity(Number(transaction.newQuantity), transaction.product.unit)}</td>

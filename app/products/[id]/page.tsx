@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/page-header";
 import { StockBadge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { formatCurrency, formatDate, formatQuantity } from "@/lib/utils";
+import { formatCurrency, formatDate, formatQuantity, formatStockTransactionType } from "@/lib/utils";
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -66,7 +66,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             {product.transactions.map((transaction) => (
               <div key={transaction.id} className="px-5 py-4 text-sm">
                 <div className="flex justify-between gap-3">
-                  <p className="font-medium text-slate-900">{transaction.type.replace("_", " ")}</p>
+                  <p className="font-medium text-slate-900">{formatStockTransactionType(transaction.type, transaction.note, transaction.referenceNumber)}</p>
                 <p className="font-semibold text-slate-900">{Number(transaction.previousQuantity)} → {Number(transaction.newQuantity)}</p>
                 </div>
                 <p className="text-slate-500">{formatDate(transaction.transactionDate)} · Qty {Number(transaction.quantity)}</p>

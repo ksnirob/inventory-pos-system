@@ -58,6 +58,18 @@ export function getStockStatus(quantity: number, minimumStockLevel: number) {
   return "IN_STOCK";
 }
 
+export function formatStockTransactionType(type: string, note?: string | null, referenceNumber?: string | null) {
+  if (type === "STOCK_OUT" && (note === "Order fulfillment" || referenceNumber?.startsWith("ORD-"))) {
+    return "Sale";
+  }
+
+  if (type === "STOCK_IN") return "Stock In";
+  if (type === "STOCK_OUT") return "Stock Out";
+  if (type === "ADJUSTMENT") return "Adjustment";
+
+  return type.replace("_", " ");
+}
+
 export function formatQuantity(value: number | string, unit?: string) {
   const quantity = Number(value);
   const normalizedUnit = (unit || "").toLowerCase();
