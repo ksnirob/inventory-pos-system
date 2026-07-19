@@ -164,8 +164,9 @@ export default async function ReportsPage({
         </FilterBar>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total products" value={reportProducts.length} icon={PackageCheck} />
+        <StatCard label="Total product purchase price" value={formatCurrency(inventoryCost)} icon={Wallet} tooltip="Current quantity x purchase price" />
         <StatCard label="Delivered orders" value={deliveredCount} icon={PackageCheck} />
         <StatCard label="Stock warning" value={stockAlerts} icon={AlertTriangle} />
       </div>

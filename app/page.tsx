@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, Boxes, FolderTree, Package, PackageX, ShoppingCart, TrendingUp, Truck } from "lucide-react";
+import { AlertTriangle, Boxes, FolderTree, Package, PackageX, ShoppingCart, TrendingUp, Truck, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { StockBadge } from "@/components/ui/badge";
@@ -26,6 +26,7 @@ export default async function DashboardPage() {
   ]);
 
   const totalStock = products.reduce((total, product) => total + Number(product.quantity), 0);
+  const totalProductPurchasePrice = products.reduce((total, product) => total + unitValue(product.purchasePrice, product.baseQuantity) * Number(product.quantity), 0);
   const lowStockProducts = products.filter((product) => Number(product.quantity) > 0 && Number(product.quantity) <= Number(product.minimumStockLevel));
   const outOfStockProducts = products.filter((product) => Number(product.quantity) <= 0);
   const totalSalesValue = Number(totalSales._sum.total ?? 0);
@@ -49,8 +50,9 @@ export default async function DashboardPage() {
     <>
       <PageHeader title="Dashboard" description="A clear view of sales, stock, and today's retail activity." />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard label="Products" value={products.length} icon={Package} />
+        <StatCard label="Total product purchase price" value={formatCurrency(totalProductPurchasePrice)} icon={Wallet} tooltip="Current quantity x purchase price" />
         <StatCard label="Sales orders" value={orderCount} icon={ShoppingCart} />
         <StatCard label="Total sales" value={formatCurrency(totalSalesValue)} icon={Boxes} />
         <StatCard label="Net profit" value={formatCurrency(netProfit)} icon={TrendingUp} tooltip="Product profit - expense" />
