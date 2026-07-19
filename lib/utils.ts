@@ -28,9 +28,8 @@ export function formatDateInputValue(date: Date | string = new Date()) {
 
 export function formatCurrency(value: number | string) {
   const amount = new Intl.NumberFormat("en-BD", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(Number(value));
+    maximumFractionDigits: 0
+  }).format(Math.round(Number(value)));
 
   return `৳ ${amount}`;
 }

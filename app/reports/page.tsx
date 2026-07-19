@@ -127,6 +127,7 @@ export default async function ReportsPage({
   const grossProfit = productSales - productCost;
   const totalExpenses = expenses.reduce((total, expense) => total + Number(expense.amount), 0);
   const netProfit = grossProfit - totalExpenses;
+  const totalProductPurchasePrice = reportProducts.reduce((total, product) => total + Number(product.purchasePrice), 0);
   const inventoryCost = reportProducts.reduce((total, product) => total + unitValue(product.purchasePrice, product.baseQuantity) * Number(product.quantity), 0);
   const inventorySellingValue = reportProducts.reduce((total, product) => total + unitValue(product.sellingPrice, product.baseQuantity) * Number(product.quantity), 0);
   const stockPotentialProfit = inventorySellingValue - inventoryCost;
@@ -166,7 +167,7 @@ export default async function ReportsPage({
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total products" value={reportProducts.length} icon={PackageCheck} />
-        <StatCard label="Total product purchase price" value={formatCurrency(inventoryCost)} icon={Wallet} tooltip="Current quantity x purchase price" />
+        <StatCard label="Total product purchase price" value={formatCurrency(totalProductPurchasePrice)} icon={Wallet} tooltip="Sum of product base purchase prices" />
         <StatCard label="Delivered orders" value={deliveredCount} icon={PackageCheck} />
         <StatCard label="Stock warning" value={stockAlerts} icon={AlertTriangle} />
       </div>
