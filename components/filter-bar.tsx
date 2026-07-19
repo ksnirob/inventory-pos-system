@@ -18,7 +18,8 @@ export function FilterBar({
   sort,
   categories = [],
   showTransactionType = false,
-  products = []
+  products = [],
+  children
 }: {
   search?: string;
   category?: string;
@@ -33,6 +34,7 @@ export function FilterBar({
   showTransactionType?: boolean;
   products?: Option[];
   resetHref: string;
+  children?: React.ReactNode;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -71,8 +73,8 @@ export function FilterBar({
   }, [currentParams, pathname, query, router]);
 
   return (
-    <div className="relative z-50">
-      <div className="flex items-center gap-3">
+    <div className="grid gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
@@ -97,10 +99,11 @@ export function FilterBar({
             Clear
           </button>
         ) : null}
+        {children}
       </div>
 
       {open ? (
-      <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 grid w-[min(92vw,1180px)] gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-2xl shadow-slate-900/15 lg:w-[min(1180px,calc(100vw-380px))] lg:grid-cols-[minmax(220px,1fr)_repeat(6,minmax(130px,170px))]">
+      <div className="grid gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/5 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-[minmax(260px,1fr)_repeat(6,minmax(130px,1fr))]">
         <label className="relative">
           <span className="sr-only">Search</span>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600" size={17} />
