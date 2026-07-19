@@ -100,7 +100,7 @@ export function FilterBar({
       </div>
 
       {open ? (
-      <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 grid w-[min(1500px,calc(100vw-3rem))] gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-2xl shadow-slate-900/15 lg:grid-cols-[minmax(220px,1fr)_repeat(6,minmax(140px,200px))]">
+      <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 grid w-[min(92vw,1180px)] gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-2xl shadow-slate-900/15 lg:w-[min(1180px,calc(100vw-380px))] lg:grid-cols-[minmax(220px,1fr)_repeat(6,minmax(130px,170px))]">
         <label className="relative">
           <span className="sr-only">Search</span>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600" size={17} />

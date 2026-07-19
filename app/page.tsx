@@ -6,29 +6,36 @@ import { StockBadge } from "@/components/ui/badge";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatDate, formatQuantity } from "@/lib/utils";
 
+function unitValue(totalValue: unknown, baseQuantity: unknown) {
+  const quantity = Number(baseQuantity);
+  if (quantity <= 0) return Number(totalValue);
+  return Number(totalValue) / quantity;
+}
+
 export default async function DashboardPage() {
-  const [products, categoryCount, supplierCount, recentProducts, recentOrders, orderCount, totalSales, expenses] = await Promise.all([
+  const [products, categoryCount, supplierCount, recentProducts, recentOrders, orders, orderCount, totalSales, expenses] = await Promise.all([
     prisma.product.findMany({ include: { category: true, supplier: true }, orderBy: { name: "asc" } }),
     prisma.category.count(),
     prisma.supplier.count(),
     prisma.product.findMany({ include: { category: true }, orderBy: { createdAt: "desc" }, take: 6 }),
     prisma.order.findMany({ include: { customer: true, items: { include: { product: true } } }, orderBy: { orderDate: "desc" }, take: 6 }),
+    prisma.order.findMany({ include: { items: { include: { product: true } } } }),
     prisma.order.count(),
     prisma.order.aggregate({ _sum: { total: true } }),
-    prisma.expense.findMany({ orderBy: { expenseDate: "desc" }, take: 30 })
+    prisma.expense.findMany()
   ]);
 
   const totalStock = products.reduce((total, product) => total + Number(product.quantity), 0);
   const lowStockProducts = products.filter((product) => Number(product.quantity) > 0 && Number(product.quantity) <= Number(product.minimumStockLevel));
   const outOfStockProducts = products.filter((product) => Number(product.quantity) <= 0);
   const totalSalesValue = Number(totalSales._sum.total ?? 0);
-  const recentExpense = expenses.reduce((total, expense) => total + Number(expense.amount), 0);
-  const deliveredRecentOrders = recentOrders.filter((order) => order.status === "DELIVERED");
-  const recentProfit = deliveredRecentOrders.reduce((total, order) => {
-    const productCost = order.items.reduce((sum, item) => sum + Number(item.quantity) * Number(item.product.purchasePrice), 0);
+  const totalExpenses = expenses.reduce((total, expense) => total + Number(expense.amount), 0);
+  const deliveredOrders = orders.filter((order) => order.status === "DELIVERED");
+  const netProfit = deliveredOrders.reduce((total, order) => {
+    const productCost = order.items.reduce((sum, item) => sum + Number(item.quantity) * unitValue(item.product.purchasePrice, item.product.baseQuantity), 0);
     const productSales = Number(order.subtotal) - Number(order.discount);
     return total + productSales - productCost;
-  }, 0) - recentExpense;
+  }, 0) - totalExpenses;
 
   const pulse = [
     { label: "Available stock", value: totalStock, icon: Boxes, color: "bg-sky-50 text-sky-700" },
@@ -46,7 +53,7 @@ export default async function DashboardPage() {
         <StatCard label="Products" value={products.length} icon={Package} />
         <StatCard label="Sales orders" value={orderCount} icon={ShoppingCart} />
         <StatCard label="Total sales" value={formatCurrency(totalSalesValue)} icon={Boxes} />
-        <StatCard label="Net profit" value={formatCurrency(recentProfit)} icon={TrendingUp} />
+        <StatCard label="Net profit" value={formatCurrency(netProfit)} icon={TrendingUp} tooltip="Product profit - expense" />
       </div>
 
       <section className="mt-5 rounded-md border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/[0.03]">

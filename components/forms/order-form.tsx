@@ -162,7 +162,7 @@ export function OrderForm({ products, customers, settings }: { products: Product
       current
         .map((line) => {
           if (line.productId !== productId) return line;
-          const nextEnteredQuantity = Math.max(0, line.enteredQuantity + amount);
+          const nextEnteredQuantity = roundQuantity(Math.max(0, line.enteredQuantity + amount));
           const nextStockQuantity = toStockQuantity({ ...line, enteredQuantity: nextEnteredQuantity }, product);
           if (nextStockQuantity > (product?.quantity ?? 0)) return line;
           return { ...line, enteredQuantity: nextEnteredQuantity };
@@ -176,7 +176,7 @@ export function OrderForm({ products, customers, settings }: { products: Product
     setCart((current) =>
       current.map((line) => {
         if (line.productId !== productId) return line;
-        const safeQuantity = Math.max(0, enteredQuantity);
+        const safeQuantity = roundQuantity(Math.max(0, enteredQuantity));
         const stockQuantity = toStockQuantity({ ...line, enteredQuantity: safeQuantity }, product);
         if (stockQuantity > (product?.quantity ?? 0)) return line;
         return { ...line, enteredQuantity: safeQuantity };
@@ -486,14 +486,14 @@ export function OrderForm({ products, customers, settings }: { products: Product
   function toStockQuantity(line: CartLine, product?: ProductOption) {
     if (!product) return 0;
     if (isKgProduct(product) && line.enteredUnit === "gm") {
-      return line.enteredQuantity / 1000;
+      return roundQuantity(line.enteredQuantity / 1000);
     }
-    return line.enteredQuantity;
+    return roundQuantity(line.enteredQuantity);
   }
 
   function formatSaleQuantity(line: CartLine, product?: ProductOption) {
     if (!product) return "";
-    return `${line.enteredQuantity} ${line.enteredUnit || product.unit}`;
+    return `${roundQuantity(line.enteredQuantity)} ${line.enteredUnit || product.unit}`;
   }
 
   function getSaleUnitPrice(product?: ProductOption) {
@@ -509,7 +509,7 @@ export function OrderForm({ products, customers, settings }: { products: Product
 
   function getInitialCartQuantity(product: ProductOption): Pick<CartLine, "enteredQuantity" | "enteredUnit"> {
     if (isKgProduct(product) && product.quantity < 1) {
-      return { enteredQuantity: product.quantity * 1000, enteredUnit: "gm" };
+      return { enteredQuantity: roundQuantity(product.quantity * 1000), enteredUnit: "gm" };
     }
 
     return { enteredQuantity: 1, enteredUnit: isKgProduct(product) ? "kg" : product.unit };
@@ -521,12 +521,16 @@ export function OrderForm({ products, customers, settings }: { products: Product
     }
 
     if (line.enteredUnit === "kg" && enteredUnit === "gm") {
-      return { ...line, enteredQuantity: line.enteredQuantity * 1000, enteredUnit };
+      return { ...line, enteredQuantity: roundQuantity(line.enteredQuantity * 1000), enteredUnit };
     }
 
     if (line.enteredUnit === "gm" && enteredUnit === "kg") {
-      return { ...line, enteredQuantity: line.enteredQuantity / 1000, enteredUnit };
+      return { ...line, enteredQuantity: roundQuantity(line.enteredQuantity / 1000), enteredUnit };
     }
 
     return { ...line, enteredUnit };
+  }
+
+  function roundQuantity(value: number) {
+    return Number(value.toFixed(3));
   }
