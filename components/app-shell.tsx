@@ -7,6 +7,7 @@ import {
   Boxes,
   ChevronRight,
   ClipboardList,
+  Ellipsis,
   FolderTree,
   LayoutDashboard,
   Menu,
@@ -36,6 +37,13 @@ const navigation = [
   { href: "/expenses", label: "Expenses", icon: ReceiptText },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings }
+];
+
+const mobileNavigation = [
+  { href: "/", label: "Home", icon: LayoutDashboard },
+  { href: "/orders/new", label: "POS", icon: ShoppingCart, featured: true },
+  { href: "/orders", label: "Sales", icon: ClipboardList },
+  { href: "/products", label: "Products", icon: Package }
 ];
 
 const titles: Record<string, string> = {
@@ -69,7 +77,7 @@ export function AppShell({ children, settings }: { children: React.ReactNode; se
   }
 
   const sidebar = (
-    <aside className="flex h-full w-[260px] flex-col border-r border-slate-200 bg-white text-slate-950">
+    <aside className="flex h-full w-[260px] flex-col border-r border-slate-200 bg-white text-slate-950 max-lg:w-[min(86vw,320px)] max-lg:rounded-r-2xl max-lg:border-slate-100">
       <div className="flex h-[76px] items-center justify-between border-b border-slate-100 px-5">
         <Link href="/" className={cn("flex min-w-0", settings.logoUrl ? "flex-col items-start gap-1" : "items-center gap-3")} onClick={() => setOpen(false)}>
           {settings.logoUrl ? (
@@ -121,7 +129,7 @@ export function AppShell({ children, settings }: { children: React.ReactNode; se
   );
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen max-lg:bg-slate-100">
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-30 lg:flex">{sidebar}</div>
       {open ? (
         <div className="fixed inset-0 z-50 lg:hidden">
@@ -131,13 +139,13 @@ export function AppShell({ children, settings }: { children: React.ReactNode; se
       ) : null}
 
       <div className="lg:pl-[260px]">
-        <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between gap-3 border-b border-slate-200/80 bg-white/95 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between gap-3 border-b border-slate-200/80 bg-white/95 px-4 backdrop-blur-xl max-lg:h-[calc(64px+env(safe-area-inset-top))] max-lg:border-slate-100 max-lg:bg-white/90 max-lg:pt-[env(safe-area-inset-top)] max-lg:shadow-sm max-lg:shadow-slate-900/5 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <button className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
+            <button className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm max-lg:rounded-2xl max-lg:border-slate-100 max-lg:bg-slate-50 lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
               <Menu size={20} />
             </button>
             <div className="min-w-0">
-              <p className="truncate text-base font-bold text-slate-950">{pageTitle}</p>
+              <p className="truncate text-base font-bold text-slate-950 max-lg:text-[15px]">{pageTitle}</p>
               <p className="hidden text-xs text-slate-500 sm:block">{settings.systemName} / {pageTitle}</p>
             </div>
           </div>
@@ -148,8 +156,38 @@ export function AppShell({ children, settings }: { children: React.ReactNode; se
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-[1540px] p-4 sm:p-6 lg:p-8">{children}</main>
-        <footer className="border-t border-slate-200 bg-white px-4 py-5 text-center text-xs text-slate-400 sm:px-6 lg:px-8">
+        <main className="mx-auto max-w-[1540px] p-4 pb-[calc(96px+env(safe-area-inset-bottom))] sm:p-6 sm:pb-[calc(104px+env(safe-area-inset-bottom))] lg:p-8">{children}</main>
+        <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200/80 bg-white/95 px-3 pb-[calc(8px+env(safe-area-inset-bottom))] pt-2 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:hidden" aria-label="Mobile primary navigation">
+          <div className="mx-auto grid max-w-lg grid-cols-5 gap-1">
+            {mobileNavigation.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-bold transition",
+                    active ? "bg-emerald-50 text-emerald-800" : "text-slate-500 active:bg-slate-100"
+                  )}
+                >
+                  <Icon size={20} className={active ? "text-emerald-700" : item.featured ? "text-[#ff6b4a]" : "text-slate-500"} />
+                  <span className="w-full truncate text-center">{item.label}</span>
+                </Link>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-bold text-slate-500 transition active:bg-slate-100"
+              aria-label="Open more navigation"
+            >
+              <Ellipsis size={20} />
+              <span className="w-full truncate text-center">More</span>
+            </button>
+          </div>
+        </nav>
+        <footer className="border-t border-slate-200 bg-white px-4 py-5 text-center text-xs text-slate-400 max-lg:hidden sm:px-6 lg:px-8">
           Developed by <a href="https://ksnirob.com" target="_blank" rel="noreferrer" className="font-semibold text-slate-600 hover:text-emerald-800">Khaled Saifullah</a>
         </footer>
       </div>

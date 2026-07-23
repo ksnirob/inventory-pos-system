@@ -112,6 +112,35 @@ table tbody tr {
   transition: background-color 160ms ease;
 }
 
+@media (max-width: 1023px) {
+  html {
+    background: #f1f5f9;
+  }
+
+  body {
+    min-height: 100svh;
+    background:
+      radial-gradient(circle at top left, rgba(16, 185, 129, 0.12), transparent 32rem),
+      #f1f5f9;
+    overscroll-behavior-y: contain;
+  }
+
+  main section,
+  main form {
+    border-radius: 18px;
+  }
+
+  main table {
+    white-space: nowrap;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

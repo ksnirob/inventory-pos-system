@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const authCookieName = "pos_session";
-const publicPaths = ["/login"];
+const publicPaths = ["/login", "/manifest.webmanifest", "/sw.js", "/app-icon.svg"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

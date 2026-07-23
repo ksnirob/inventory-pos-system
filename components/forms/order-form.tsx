@@ -1,8 +1,9 @@
 "use client";
 
-import { ChevronDown, MapPin, Minus, Plus, Search, ShoppingBag, Trash2 } from "lucide-react";
+import { ChevronDown, MapPin, Minus, Plus, Search, ShoppingBag, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useForm, useWatch } from "react-hook-form";
 import { createOrder } from "@/actions/inventory";
 import { Toast } from "@/components/toast";
@@ -52,6 +53,7 @@ export function OrderForm({ products, customers, settings }: { products: Product
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [quantityModal, setQuantityModal] = useState<CartLine | null>(null);
   const today = formatDateInputValue();
   const {
     register,
@@ -197,6 +199,73 @@ export function OrderForm({ products, customers, settings }: { products: Product
     );
   }
 
+  function handleProductClick(product: ProductOption) {
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      openQuantityModal(product);
+      return;
+    }
+
+    addProduct(product.id);
+  }
+
+  function openQuantityModal(product: ProductOption) {
+    const existing = cart.find((line) => line.productId === product.id);
+    setQuantityModal(existing ?? { productId: product.id, ...getInitialCartQuantity(product) });
+  }
+
+  function changeModalQuantity(amount: number) {
+    setQuantityModal((current) => {
+      if (!current) return current;
+      const product = products.find((item) => item.id === current.productId);
+      const nextEnteredQuantity = roundQuantity(Math.max(0, current.enteredQuantity + amount));
+      const nextLine = { ...current, enteredQuantity: nextEnteredQuantity };
+      if (toStockQuantity(nextLine, product) > (product?.quantity ?? 0)) return current;
+      return nextLine;
+    });
+  }
+
+  function setModalQuantity(enteredQuantity: number) {
+    setQuantityModal((current) => {
+      if (!current) return current;
+      const product = products.find((item) => item.id === current.productId);
+      const nextLine = { ...current, enteredQuantity: roundQuantity(Math.max(0, enteredQuantity)) };
+      if (toStockQuantity(nextLine, product) > (product?.quantity ?? 0)) return current;
+      return nextLine;
+    });
+  }
+
+  function setModalUnit(enteredUnit: string) {
+    setQuantityModal((current) => {
+      if (!current) return current;
+      const product = products.find((item) => item.id === current.productId);
+      const nextLine = convertCartUnit(current, product, enteredUnit);
+      if (toStockQuantity(nextLine, product) > (product?.quantity ?? 0)) return current;
+      return nextLine;
+    });
+  }
+
+  function confirmQuantityModal(nextLine = quantityModal) {
+    if (!nextLine || nextLine.enteredQuantity <= 0) {
+      setQuantityModal(null);
+      return;
+    }
+
+    const product = products.find((item) => item.id === nextLine.productId);
+    if (!product) return;
+
+    const safeLine = clampLineToStock(nextLine, product);
+
+    setCart((current) => {
+      const exists = current.some((line) => line.productId === safeLine.productId);
+      if (exists) {
+        return current.map((line) => (line.productId === safeLine.productId ? safeLine : line));
+      }
+
+      return [...current, safeLine];
+    });
+    setQuantityModal(null);
+  }
+
   function removeProduct(productId: string) {
     setCart((current) => current.filter((line) => line.productId !== productId));
   }
@@ -272,47 +341,48 @@ export function OrderForm({ products, customers, settings }: { products: Product
             <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-900" size={18} />
           </label>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 2xl:grid-cols-3">
           {filteredProducts.map((product) => {
+            const existingCartLine = cart.find((line) => line.productId === product.id);
             const availableQuantity = Math.max(0, product.quantity - (cartReservedStock[product.id] ?? 0));
-            const isUnavailable = availableQuantity <= 0;
+            const isFullyReserved = availableQuantity <= 0;
+            const isUnavailable = isFullyReserved && !existingCartLine;
 
             return (
               <button
                 key={product.id}
                 type="button"
-                onClick={() => addProduct(product.id)}
+                onClick={() => handleProductClick(product)}
                 disabled={isUnavailable}
-                className={isUnavailable
-                  ? "group relative flex min-h-64 cursor-not-allowed flex-col overflow-hidden rounded-md border border-slate-200 bg-slate-50 text-left opacity-70"
+                className={isFullyReserved
+                  ? `group relative flex min-h-64 flex-col overflow-hidden rounded-md border border-slate-200 bg-slate-50 text-left opacity-70 ${isUnavailable ? "cursor-not-allowed" : ""}`
                   : "group relative flex min-h-64 flex-col overflow-hidden rounded-md border border-slate-200 bg-white text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"}
               >
                 {product.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={product.imageUrl} alt={product.name} className="h-32 w-full border-b border-slate-100 bg-slate-50 object-cover" />
+                  <img src={product.imageUrl} alt={product.name} className="h-32 w-full shrink-0 border-b border-slate-100 bg-slate-50 object-cover" />
                 ) : (
-                  <span className="grid h-32 w-full place-items-center border-b border-emerald-100 bg-emerald-50 text-2xl font-black text-emerald-700">
+                  <span className="grid h-32 w-full shrink-0 place-items-center border-b border-emerald-100 bg-emerald-50 text-2xl font-black text-emerald-700">
                     {product.name.slice(0, 2).toUpperCase()}
                   </span>
                 )}
-                <div className="flex items-start justify-between gap-3 p-3 pb-2">
+                <div className="flex flex-col gap-2 p-2.5 pb-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-3 sm:pb-2">
                   <div className="min-w-0">
-                    <p className="line-clamp-2 font-semibold leading-5 text-slate-950">{product.name}</p>
-                    <p className="mt-0.5 truncate text-xs text-slate-500">{product.sku}</p>
+                    <p className="line-clamp-2 text-sm font-semibold leading-5 text-slate-950 sm:text-base">{product.name}</p>
                   </div>
-                  <span className="max-w-24 shrink-0 rounded-full bg-slate-50 px-2 py-1 text-center text-[10px] font-bold leading-tight text-slate-600 ring-1 ring-slate-200">
+                  <span className="w-fit max-w-full shrink-0 rounded-full bg-slate-50 px-2 py-1 text-center text-[10px] font-bold leading-tight text-slate-600 ring-1 ring-slate-200 sm:max-w-24">
                     {formatQuantity(availableQuantity, product.unit)}
                   </span>
                 </div>
-                <div className="mx-3 mb-3 mt-auto flex items-end justify-between gap-3 border-t border-slate-100 pt-2.5">
+                <div className="mx-2.5 mb-2.5 mt-auto flex items-end justify-between gap-2 border-t border-slate-100 pt-2.5 sm:mx-3 sm:mb-3 sm:gap-3">
                   <div className="min-w-0">
-                    <p className="text-lg font-bold text-slate-950">{formatCurrency(product.sellingPrice)}</p>
+                    <p className="text-base font-bold text-slate-950 sm:text-lg">{formatCurrency(product.sellingPrice)}</p>
                     <p className="mt-1 truncate text-xs text-slate-500">{product.categoryName}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <span className={isUnavailable
-                      ? "grid h-9 w-9 place-items-center rounded-md bg-slate-300 text-lg font-medium text-white"
-                      : "grid h-9 w-9 place-items-center rounded-md bg-slate-900 text-lg font-medium text-white transition group-hover:bg-emerald-700"}
+                      ? "grid h-8 w-8 place-items-center rounded-md bg-slate-300 text-lg font-medium text-white sm:h-9 sm:w-9"
+                      : "grid h-8 w-8 place-items-center rounded-md bg-slate-900 text-lg font-medium text-white transition group-hover:bg-emerald-700 sm:h-9 sm:w-9"}
                     >
                       +
                     </span>
@@ -474,9 +544,170 @@ export function OrderForm({ products, customers, settings }: { products: Product
           </div>
         </div>
       </aside>
+      {quantityModal ? (
+        <QuantityModal
+          line={quantityModal}
+          product={products.find((item) => item.id === quantityModal.productId)}
+          onClose={() => setQuantityModal(null)}
+          onDecrease={() => changeModalQuantity(-1)}
+          onIncrease={() => changeModalQuantity(1)}
+          onQuantityChange={setModalQuantity}
+          onUnitChange={setModalUnit}
+          onConfirm={(line) => confirmQuantityModal(line)}
+        />
+      ) : null}
       <Toast message={toast?.message} type={toast?.type} />
     </form>
   );
+}
+
+function QuantityModal({
+  line,
+  product,
+  onClose,
+  onDecrease,
+  onIncrease,
+  onQuantityChange,
+  onUnitChange,
+  onConfirm
+}: {
+  line: CartLine;
+  product?: ProductOption;
+  onClose: () => void;
+  onDecrease: () => void;
+  onIncrease: () => void;
+  onQuantityChange: (quantity: number) => void;
+  onUnitChange: (unit: string) => void;
+  onConfirm: (line: CartLine) => void;
+}) {
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    const originalStyles = {
+      position: document.body.style.position,
+      top: document.body.style.top,
+      left: document.body.style.left,
+      right: document.body.style.right,
+      width: document.body.style.width,
+      overflow: document.body.style.overflow
+    };
+
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.position = originalStyles.position;
+      document.body.style.top = originalStyles.top;
+      document.body.style.left = originalStyles.left;
+      document.body.style.right = originalStyles.right;
+      document.body.style.width = originalStyles.width;
+      document.body.style.overflow = originalStyles.overflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
+  if (!product) return null;
+
+  const stockQuantity = toStockQuantity(line, product);
+  const lineTotal = getSaleUnitPrice(product) * stockQuantity;
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal((
+    <div className="fixed inset-0 z-50 lg:hidden">
+      <button type="button" className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" aria-label="Close quantity modal" onClick={onClose} />
+      <div className="absolute bottom-0 left-1/2 w-[min(calc(100dvw-24px),430px)] -translate-x-1/2 overflow-hidden rounded-t-3xl bg-white p-4 pb-[calc(16px+env(safe-area-inset-bottom))] shadow-2xl shadow-slate-950/30" onClick={(event) => event.stopPropagation()}>
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="flex min-w-0 gap-3">
+            {product.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={product.imageUrl} alt={product.name} className="h-16 w-16 shrink-0 rounded-2xl bg-slate-100 object-cover" />
+            ) : (
+              <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-lg font-black text-emerald-700">
+                {product.name.slice(0, 2).toUpperCase()}
+              </span>
+            )}
+            <div className="min-w-0 pt-1">
+              <h3 className="line-clamp-2 text-base font-bold leading-5 text-slate-950">{product.name}</h3>
+              <p className="mt-1 text-sm font-semibold text-emerald-700">{formatCurrency(product.sellingPrice)}</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600" aria-label="Close">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="grid gap-4 rounded-2xl bg-slate-50 p-3">
+          <div className="grid grid-cols-[56px_minmax(0,1fr)_56px] overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <button type="button" className="grid h-12 w-12 place-items-center text-slate-700" onClick={onDecrease} aria-label="Decrease quantity">
+              <Minus size={18} />
+            </button>
+            <input
+              type="number"
+              min="0"
+              step="0.001"
+              value={line.enteredQuantity}
+              onChange={(event) => onQuantityChange(Number(event.target.value))}
+              className="h-12 min-w-0 border-x border-slate-200 text-center text-lg font-bold text-slate-950 outline-none"
+              aria-label="Sale quantity"
+            />
+            <button type="button" className="grid h-12 w-12 place-items-center text-slate-700" onClick={onIncrease} aria-label="Increase quantity">
+              <Plus size={18} />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-[88px_minmax(0,1fr)] items-stretch gap-3">
+            {isKgProduct(product) ? (
+              <label className="relative">
+                <select
+                  value={line.enteredUnit}
+                  onChange={(event) => onUnitChange(event.target.value)}
+                  className="h-full min-h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-8 text-sm font-semibold text-slate-800"
+                  aria-label="Sale unit"
+                >
+                  <option value="kg">kg</option>
+                  <option value="gm">gm</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-700" size={15} />
+              </label>
+            ) : (
+              <span className="grid min-h-11 place-items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">{product.unit}</span>
+            )}
+            <div className="min-w-0 rounded-xl bg-white px-3 py-2 text-right ring-1 ring-slate-200">
+              <p className="truncate text-xs font-medium text-slate-500">Stock {formatQuantity(product.quantity, product.unit)}</p>
+              <p className="truncate text-lg font-black text-slate-950">{formatCurrency(lineTotal)}</p>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="mt-4 h-12 w-full rounded-2xl bg-emerald-700 px-4 text-sm font-bold text-white shadow-sm shadow-emerald-900/10 transition active:translate-y-px"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onConfirm(line);
+          }}
+        >
+          Add to cart
+        </button>
+      </div>
+    </div>
+  ), document.body);
+}
+
+function clampLineToStock(line: CartLine, product: ProductOption): CartLine {
+  const stockQuantity = toStockQuantity(line, product);
+  if (stockQuantity <= product.quantity) return line;
+
+  if (isKgProduct(product) && line.enteredUnit === "gm") {
+    return { ...line, enteredQuantity: roundQuantity(product.quantity * 1000) };
+  }
+
+  return { ...line, enteredQuantity: roundQuantity(product.quantity) };
 }
   function isKgProduct(product?: ProductOption) {
     const unit = product?.unit.toLowerCase();

@@ -59,14 +59,13 @@ export function QuickActions() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-10 w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 transition hover:border-emerald-300 hover:bg-white hover:shadow-sm"
+        className="flex h-10 w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 transition hover:border-emerald-300 hover:bg-white hover:shadow-sm max-sm:w-10 max-sm:justify-center max-sm:rounded-2xl max-sm:border-slate-100 max-sm:px-0"
       >
         <span className="flex items-center gap-2">
           <Search size={16} className="text-slate-400" />
           <span className="hidden sm:inline">Search pages and actions</span>
-          <span className="sm:hidden">Search</span>
         </span>
-        <kbd className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">Ctrl K</kbd>
+        <kbd className="hidden rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 sm:inline-block">Ctrl K</kbd>
       </button>
       {open ? (
         <div className="absolute right-0 top-12 z-50 w-[min(92vw,430px)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/15">
